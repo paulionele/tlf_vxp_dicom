@@ -113,7 +113,6 @@ carb_a = axis_data(:,17,2)';
 
 
 fig1 = figure();
-fig2 = figure();
 
 figure(fig1);
 plot(times,beamh_e)
