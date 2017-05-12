@@ -12,20 +12,20 @@ clear; clc
 
 % file1 = 'TT4DSIN_6322_2.vxp';
 file1 = uigetfile('.VXP');
-[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_information(file1);
+[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_reader(file1);
 
 %Related to time...
-sample_time = header{1,6}; %total sample time (s)
-sample_freq = header{1,7}; %sampling frequency
-sample_inte = 1/sample_freq;
+sample_time  = header{1,6}; %total sample time (s)
+sample_freq  = header{1,7}; %sampling frequency
+sample_inte  = 1/sample_freq;
 sample_total = sample_time * sample_freq;
-times = linspace(0,sample_time,sample_total);
-timestamp = cell2mat(timestamp)-timestamp{1,1};
+times        = linspace(0,sample_time, sample_total);
+timestamp    = cell2mat(timestamp) - timestamp{1,1};
 
 %Phase, amplitude, and mark marticies .
-phase = cell2mat(phase);
+phase     = cell2mat(phase);
 amplitude = cell2mat(amplitude);
-mark = cell2mat(mark);
+mark      = cell2mat(mark);
 
 %Recentering ampltude around mean value...
 % amplitude = amplitude - mean(amplitude);
@@ -33,7 +33,7 @@ mark = cell2mat(mark);
 %Determination of the indicies when the phase value is closest to phase 0
 %or phase pi.
 phase_zero = find(mark == 1);
-phase_pi =   find(mark == 2);
+phase_pi   = find(mark == 2);
 
 %Amplitude plot.
 fig00 = figure;

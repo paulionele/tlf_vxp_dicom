@@ -1,4 +1,4 @@
-function [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_information(file1)
+function [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_reader(file1)
 %Function to call when reading export of "motion data files" for
 %postprocessing of respiration motion data (v1.6 and newer). Files are
 %recorded in a test format after CT session. File is written in text
@@ -29,12 +29,12 @@ header = {};
 
 %Data sructures to be populated.
 amplitude = {};
-phase = {};
+phase     = {};
 timestamp = {};
 validflag = {};
-ttlin = {};
-mark = {};
-ttlout = {};
+ttlin     = {};
+mark      = {};
+ttlout    = {};
 
 for i = 1:10
     if i == 1 || i == 10
@@ -54,7 +54,7 @@ for i = 1:10
     end
 end 
 
-%Loop for the data structures.
+%Loop for the data structure.
 while ischar(tchar)
     tchar = fgetl(fid);
     if ischar(tchar) == 1
