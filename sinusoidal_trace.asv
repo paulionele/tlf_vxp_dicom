@@ -2,10 +2,11 @@ function [sorted] = sinusoidal_trace(phases)
 %Function for sorting TLF, based on simple pre-programmed respiratory
 %trace. This function does not use any VXP or MW information.
 
-%Can introduce phase offset.
-%offset = pi/10; %[0,2*pi)
+%Period and offset can be determined from the VXP file phase information.
+%period = 3; %period in seconds
+offset = 0; %[0,2*pi); probably apply to 10 equally spaced phases???
 
-aa = linspace(0, 2*pi, 11); %10 phases equally spaced
+aa = linspace(0,2*pi,11); %10 phases equally spaced
 lp = length(phases);
 
 p0 = [];
