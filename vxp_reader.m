@@ -26,7 +26,7 @@ fid = fopen(file1,'r');
 %Header container.
 header = {};
 
-%Data sructures to be populated.
+%Data structures to be populated.
 amplitude = {};
 phase     = {};
 timestamp = {};

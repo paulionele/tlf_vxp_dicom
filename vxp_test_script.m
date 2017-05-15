@@ -25,11 +25,6 @@ phase_zero = find(mark == 1);
 phase_pi   = find(mark == 2);
 
 
-
-
-
-
-
 %Amplitude plot.
 fig00 = figure;
 figure(fig00);

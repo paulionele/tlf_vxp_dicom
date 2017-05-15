@@ -1,7 +1,7 @@
 clear;clc
 
 phases = linspace(0,2*pi,5);
-ph = [0,0.5,0.7,1.0,3.14,pi,6,6.14];
+ph = [0,0.5,0.7,1.0,3.14,pi,6,6.14,2*pi];
 
 lp = length(ph);
 

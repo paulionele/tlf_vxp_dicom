@@ -111,8 +111,13 @@ carb_a = axis_data(:,17,2)';
 %     mlc_leaf_a = axis_data(:,i,2);
 % end
 
+%Getting VXP file information.
+file1 = uigetfile('.VXP');
+[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_reader(file1);
+timestamp = cell2mat(timestamp) - timestamp{1,1};
+phase     = cell2mat(phase);
+% amplitude = cell2mat(amplitude);
+% mark      = cell2mat(mark);
 
-fig1 = figure();
-
-figure(fig1);
-plot(times,beamh_e)
+%Calling function to sort timestamps based on phases from VXP...
+sorted = sinusoidal_trace(timestamp, trace);
