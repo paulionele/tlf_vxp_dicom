@@ -4,7 +4,6 @@ function [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_re
 %recorded in a test format after CT session. File is written in text
 %format.
 
-%KNOWN ISSUES: 'mark' 
 %File consists of two main sections: [Header], [Data].
 
 %The structure of the [Header] is as follows:

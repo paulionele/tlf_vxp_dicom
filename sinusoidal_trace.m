@@ -1,4 +1,4 @@
-function [ output_args ] = sinusoidal_trace( input_args )
+function [ output_args ] = sinusoidal_trace(phase)
 %Function for sorting TLF, based on simple pre-programmed respiratory
 %trace. This function does not use any VXP or MW information.
 
@@ -6,12 +6,10 @@ function [ output_args ] = sinusoidal_trace( input_args )
 %period = 3; %period in seconds
 offset = 0; %[0,2*pi)
 
-phases_u = linspace(0, 2*pi, 11); %phases unshifted
-shift = (phases_u(2) - phases_u(1))/2; %half phase shift
-phases_s = phases_u - shift;
+p = linspace(0, 2*pi, 11); %setting evenly distributed phases
 
-phases = phases_s - offset;
-
+for i = 1:length(phase)
+    [~,t_index] = min(abs(p - phase(i)));
+    
 
 end
-

@@ -1,16 +1,5 @@
 clear; clc
 
-% CRC=27051 --- contains CRC checksum
-% Version=1.6 --- version number of export file
-% Data_layout=amplitude,phase,timestamp,validflag,ttlin,mark,ttlout
-% Patient_ID=000000
-% Date=08-30-2007 --- (month-day-year)
-% Total_study_time=247.582 --- actual recording length in sec to 0.001s
-% Samples_per_second=30 --- NTSC 30 or 15, CCIR 25 or 12.5
-% Scale_factor=10.0 --- scale factor for signal data in mm
-%  For ex: if value_resp_wave (amplitude) in cm, the scale factor is 10 for mm rep.
-
-% file1 = 'TT4DSIN_6322_2.vxp';
 file1 = uigetfile('.VXP');
 [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_reader(file1);
 
@@ -34,6 +23,12 @@ mark      = cell2mat(mark);
 %or phase pi.
 phase_zero = find(mark == 1);
 phase_pi   = find(mark == 2);
+
+
+
+
+
+
 
 %Amplitude plot.
 fig00 = figure;
