@@ -49,7 +49,7 @@ fclose(fid1);
 
 %First snap is at 0 ms (?), and each preceeding snap is at 20*n ms; where n
 %is the snap number. So an array of times:
-tlf_times = 0:20:(20*header.num_snaps - 1);
+tlf_times = single(0:20:(20*header.num_snaps - 1)); %do we lose a sample time off the end???
 
 %Collimator Rotation
 collrot_e = axis_data(:,1,1)';
@@ -107,13 +107,14 @@ carb_a = axis_data(:,17,2)';
 
 %Getting VXP file information.
 file1 = uigetfile('.VXP');
-[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,header] = vxp_reader(file1);
-vxp_times = cell2mat(timestamp) - timestamp{1,1}; del timestamp
+[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
+vxp_times = cell2mat(timestamp) - timestamp{1,1}; clearvars timestamp validflag ttlin ttlout
 phase     = cell2mat(phase);
 % amplitude = cell2mat(amplitude);
 % mark      = cell2mat(mark);
+% save('testvars', 'tlf_times', 'vxp_times', 'phase')
 
 %Calling function to sort tlf_times based on vxp_times-phases...
 %Function returns a cell array of phase-sorted tlf_time indicies! The
-%indicies can be used to reference any machine axis.
+%indicies can be used to reference any machine axis data.
 sorted = sinusoidal_trace(tlf_times, vxp_times, phase);

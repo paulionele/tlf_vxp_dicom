@@ -1,14 +1,11 @@
 function [sorted] = sinusoidal_trace(tlf_times, vxp_times, phase)
 %Function for sorting TLF, based on phase information from the VXP file.
 
-%vxp_time : timestamp
-%tlf_time : times
-
 %Can introduce phase offset.
 %offset = pi/10; %[0,2*pi)
 
 aa = linspace(0, 2*pi, 11); %10 phases equally spaced
-lp = length(phase);
+ltlf = length(tlf_times);
 
 p0  = [];
 p10 = [];
@@ -21,7 +18,7 @@ p70 = [];
 p80 = [];
 p90 = [];
 
-for i = 1:lp
+for i = 1:ltlf
     %[~,t_index] = min(abs(p-phase(i)));
     
     if (phase(i) >= aa(1)) && (phase(i) < aa(2))
