@@ -98,23 +98,23 @@ cp_e = axis_data(:,15,1)';
 cp_a = axis_data(:,15,2)';
 
 %%% MLC Things
-%Carriage A Positions 
+%Carriage A Positions
 cara_e = axis_data(:,16,1)';
 cara_a = axis_data(:,16,2)';
-%Carriage B Positions 
+%Carriage B Positions
 carb_e = axis_data(:,17,1)';
 carb_a = axis_data(:,17,2)';
 
 %Getting VXP file information.
 file1 = uigetfile('.VXP');
 [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
-vxp_times = cell2mat(timestamp) - timestamp{1,1}; clearvars timestamp validflag ttlin ttlout
+vxp_times = cell2mat(timestamp) - timestamp{1,1}; 
+clearvars timestamp validflag ttlin ttlout
 phase     = cell2mat(phase);
 % amplitude = cell2mat(amplitude);
 % mark      = cell2mat(mark);
-% save('testvars', 'tlf_times', 'vxp_times', 'phase')
 
-%Calling function to sort tlf_times based on vxp_times-phases...
-%Function returns a cell array of phase-sorted tlf_time indicies! The
-%indicies can be used to reference any machine axis data.
-sorted = sinusoidal_trace(tlf_times, vxp_times, phase);
+%Sorting the TLF file information.
+[sorted_phase, phase_tlf2] = sinusoidal_trace(tlf_times, vxp_times, phase);
+
+
