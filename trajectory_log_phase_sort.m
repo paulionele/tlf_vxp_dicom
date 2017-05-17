@@ -1,4 +1,4 @@
-function [sorted_phase, phase_tlf2] = sinusoidal_trace(tlf_times, vxp_times, phase)
+function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase)
 %Function for sorting TLF, based on phase information from the VXP file.
 %sorted_phase : phase-sorted indicies (indicies can be used to ref. axis)
 %phase_tlf2 : 1xM array of phase values (1:1 coorelation with tlf_time)

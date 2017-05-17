@@ -105,7 +105,7 @@ cara_a = axis_data(:,16,2)';
 carb_e = axis_data(:,17,1)';
 carb_a = axis_data(:,17,2)';
 
-%Getting VXP file information.
+%%%Getting VXP file information.
 file1 = uigetfile('.VXP');
 [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
 vxp_times = cell2mat(timestamp) - timestamp{1,1}; 
@@ -114,7 +114,7 @@ phase     = cell2mat(phase);
 % amplitude = cell2mat(amplitude);
 % mark      = cell2mat(mark);
 
-%Sorting the TLF file information.
-[sorted_phase, phase_tlf2] = sinusoidal_trace(tlf_times, vxp_times, phase);
+%%%Sorting the TLF file information.
+[sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase);
 
-
+%%%Excising information for seperate arcs.
