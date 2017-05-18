@@ -1,19 +1,19 @@
-function [arc_1, arc_2, intra_arc] = arc_separator(beamh_a, subbeam)
+function [arc_1, arc_2, intra_arc] = arc_separator(cp_a, subbeam)
 %Function for seperating arcs.
 %   Detailed explanation goes here
 
-aa = cell(length(subbeams),1);
-lt = length(beamh_a);
+aa = cell(length(subbeams), 1);
+lt = length(cp_a);
 
 r = 1; %beam counter
 q = 0; %
 
 for i = 1:lt
-    if beamh_a(i) == 0
+    if cp_a(i) == 0
         %Add index to beam(r).
         aa{r} = [aa{r}, i];
         q = 0;
-    elseif beamh_a(i) == 2 && (i < 10 || i > (lt - 10))
+    elseif cp_a(i) == 2 && (i < 10 || i > (lt - 10))
         %Add to beam(r).
         %Beam hold activated, but at start or end of treatment.
         aa{r} = [aa{r}, i];
