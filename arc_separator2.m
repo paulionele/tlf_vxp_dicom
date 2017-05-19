@@ -12,10 +12,10 @@ cpt = max(cp_a); %maximum CP of entire delivery (ex:227)
 aa = cell(number_subbeams, 1); %store info for each subbeam
 
 for i = 1:number_subbeams
-    %Starting subbeam control points.
+    %Determine starting subbeam control points.
     cps(i) = subbeam(i).cp; %(ex:0, 113)
     
-    %Final control point 'time' in a subbeam sequence.
+    %Get time cooresp. to final CP in subbeam sequence.
     if i ~= length(subbeam)
         %Not final subbeam.
         a1 = find(cp_a == subbeam(i+1).cp);
@@ -25,6 +25,7 @@ for i = 1:number_subbeams
         a1 = find(cp_a == subbeam(i).cp + 1);
         a1 = a1(end); %index of final CP in final sb. seq.
     end
+    
 end
 
 
