@@ -118,3 +118,9 @@ phase     = cell2mat(phase);
 [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase);
 
 %%%Excising information for seperate arcs.
+[subbeam, intra_arc] = arc_separator2(cp_a, subbeam);
+
+plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_a(subbeam(1).arc(1):subbeam(1).arc(2)))
+hold on
+plot(tlf_times(subbeam(2).arc(1):subbeam(2).arc(2)), cp_a(subbeam(2).arc(1):subbeam(2).arc(2)),'-g')
+plot(tlf_times(intra_arc{1}(1):intra_arc{1}(2)), cp_a(intra_arc{1}(1):intra_arc{1}(2)),'-r')
