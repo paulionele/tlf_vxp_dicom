@@ -43,6 +43,7 @@ end
 
 %Storing subbeam index information into pre-existing subbeam structure.
 %New field (arc) added to each sub-structure.
+%I wonder if this may cause issues...
 subbeam(1).arc = [];
 for i = 1:length(subbeam)
     subbeam(i).arc = aa{i};
