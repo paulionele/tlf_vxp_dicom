@@ -111,15 +111,31 @@ file1 = uigetfile('.VXP');
 vxp_times = cell2mat(timestamp) - timestamp{1,1}; 
 clearvars timestamp validflag ttlin ttlout
 phase     = cell2mat(phase);
-% amplitude = cell2mat(amplitude);
+amplitude = cell2mat(amplitude);
 % mark      = cell2mat(mark);
 
 %%%Sorting the TLF file information.
 [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase);
 
 %%%Excising index ranges for seperate arcs.
-[sorted_phase_arc, intra_arc] = arc_separator2(cp_a, subbeam, sorted_phase);
+[sorted_phase_arc, intra_arc, arc1_tlf_indicies, arc2_tlf_indicies] = arc_separator2(cp_a, subbeam, sorted_phase);
 
+
+
+%%%Plotting
+% sz = 25;
+% scatter(tlf_times(sorted_phase_arc{1,1}), mu_a(sorted_phase_arc{1,1}),sz,'r','filled')
+% hold on
+% scatter(tlf_times(sorted_phase_arc{2,1}), mu_a(sorted_phase_arc{2,1}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,1}), mu_a(sorted_phase_arc{3,1}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,1}), mu_a(sorted_phase_arc{5,1}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,1}), mu_a(sorted_phase_arc{10,1}),sz,'m','filled')
+% 
+% scatter(tlf_times(sorted_phase_arc{1,2}), mu_a(sorted_phase_arc{1,2}),sz,'r','filled')
+% scatter(tlf_times(sorted_phase_arc{2,2}), mu_a(sorted_phase_arc{2,2}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,2}), mu_a(sorted_phase_arc{3,2}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,2}), mu_a(sorted_phase_arc{5,2}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,2}), mu_a(sorted_phase_arc{10,2}),sz,'m','filled')
 
 
 % plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_a(subbeam(1).arc(1):subbeam(1).arc(2)))

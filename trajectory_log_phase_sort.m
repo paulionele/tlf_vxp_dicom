@@ -80,7 +80,7 @@ for i = 1:length_tlf
     elseif (phase_tlf2(i) == 8)
         p80 = [p80,i];
     else
-        p90 = [p90,tlf_times(i)];
+        p90 = [p90,i];
     end
 end
 

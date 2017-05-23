@@ -1,4 +1,4 @@
-function [sorted_phase_arc, intra_arc] = arc_separator2(cp_a, subbeam, sorted_phase)
+function [sorted_phase_arc, intra_arc, arc1_tlf_indicies, arc2_tlf_indicies] = arc_separator2(cp_a, subbeam, sorted_phase)
 %Function for seperating arcs. Based on control points.
 %Limited to 2 arc/subbeam treatments.
 
@@ -35,11 +35,11 @@ for i = 1:number_subbeams
         af = find(cp_a == af); %indicies for max # CP
         af = af(1); %index of final CP in final sb. seq. Note the MU tapers so best to take first instance.
     end
-    aa{i} = [ai, af];        
+    aa{i} = [ai, af];
 end
 
 for i = 1:number_intra_arc
-    %Will run once loop for 2 subbeams.
+    %Will run once for 2 subbeams.
     intra_arc{i} = [aa{i}(2) + 1, aa{i+1}(1) - 1];
 end
 
@@ -50,9 +50,10 @@ end
 %     subbeam(i).arc = aa{i};
 % end
 
+%%%Below this, code only works for 2 subbeams.
 %Set of indicies for each arc.
-arc1_tlf_times = aa{1}(1):aa{1}(2);
-arc2_tlf_times = aa{2}(1):aa{2}(2);
+arc1_tlf_indicies = aa{1}(1):aa{1}(2);
+arc2_tlf_indicies = aa{2}(1):aa{2}(2);
 sorted_phase_arc = cell(10,2);
 
 %Preallocating. Col.1 is ARC 1, Col. 2 is ARC 2.
@@ -64,23 +65,28 @@ end
 %Sorting each phase into 2 arcs.
 for i = 1:length(sorted_phase) %(1:10)
     for j = 1:length(sorted_phase{i}) %(1:500 ish)
-        if ismember(sorted_phase{i}(j), arc1_tlf_times)
+        if ismember(sorted_phase{i}(j), arc1_tlf_indicies)
             %Arc 1.
             sorted_phase_arc{i,1}(j) = sorted_phase{i}(j);
             
-        elseif ismember(sorted_phase{i}(j), arc2_tlf_times)
+        elseif ismember(sorted_phase{i}(j), arc2_tlf_indicies)
             %Arc 2.
             sorted_phase_arc{i,2}(j) = sorted_phase{i}(j);
             
         else
-            %Intra-arc. 
+            %Intra-arc.
         end
     end
 end
 
-%sorted_phase_arc(~cellfun('isempty',R)) 
-%Removing empty entries from each arc-sorted phase.
-    %Preallocating. Col.1 is ARC 1, Col. 2 is ARC 2.
+%Removing NaN entries.
+for i = 1:size(sorted_phase_arc, 1)
+    sorted_phase_arc{i,1}(isnan(sorted_phase_arc{i,1})) = [];
+    sorted_phase_arc{i,2}(isnan(sorted_phase_arc{i,2})) = [];
+end
+
+% x = {'xy','yz',nan}
+% x(cellfun(@(x) any(isnan(x)),x)) = []
 
 %Need to modify below and the objects returned by the function if plan
 %consists of more than one arc.
