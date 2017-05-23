@@ -3,6 +3,9 @@ function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_t
 %sorted_phase : phase-sorted indicies (indicies can be used to ref. axis)
 %phase_tlf2 : 1xM array of phase values (1:1 coorelation with tlf_time)
 
+%This function can be improved by preallocating matrix then removing empty
+%entries.
+
 %Interpolated phase values, based on TLF times.
 phase_tlf = interp1(vxp_times, phase, tlf_times);
 phase_tlf(isnan(phase_tlf)) = []; %removing NaN entries
@@ -51,7 +54,7 @@ end
 %Function by Stephen. Reassigns phase points in the discontinuities.
 mode_window = 21;
 phase_tlf2 = sorted_phase;
-for jmode = ceil(mode_window/2):length_tlf-ceil(mode_window/2);
+for jmode = ceil(mode_window/2):length_tlf-ceil(mode_window/2)
     phase_tlf2(jmode) = mode(sorted_phase(jmode-floor(mode_window/2):jmode+floor(mode_window/2)));
 end
 
@@ -81,6 +84,7 @@ for i = 1:length_tlf
     end
 end
 
+%Returned is indicies belonging to each phase.
 sorted_phase = {p0; p10; p20; p30; p40; p50; p60; p70; p80; p90};
 
 %Original function.

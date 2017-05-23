@@ -1,5 +1,6 @@
-function [subbeam, intra_arc] = arc_separator2(cp_a, subbeam)
+function [sorted_phase_arc, intra_arc] = arc_separator2(cp_a, subbeam, sorted_phase)
 %Function for seperating arcs. Based on control points.
+%Limited to 2 arc/subbeam treatments.
 
 number_subbeams  = length(subbeam);
 aa = cell(number_subbeams, 1); %store indicies for each subbeam
@@ -38,16 +39,48 @@ for i = 1:number_subbeams
 end
 
 for i = 1:number_intra_arc
+    %Will run once loop for 2 subbeams.
     intra_arc{i} = [aa{i}(2) + 1, aa{i+1}(1) - 1];
 end
 
 %Storing subbeam index information into pre-existing subbeam structure.
 %New field (arc) added to each sub-structure.
-%I wonder if this may cause issues...
-subbeam(1).arc = [];
-for i = 1:length(subbeam)
-    subbeam(i).arc = aa{i};
+% subbeam(1).arc = [];
+% for i = 1:length(subbeam)
+%     subbeam(i).arc = aa{i};
+% end
+
+%Set of indicies for each arc.
+arc1_tlf_times = aa{1}(1):aa{1}(2);
+arc2_tlf_times = aa{2}(1):aa{2}(2);
+sorted_phase_arc = cell(10,2);
+
+%Preallocating. Col.1 is ARC 1, Col. 2 is ARC 2.
+for i = 1:size(sorted_phase_arc, 1)
+    sorted_phase_arc{i,1} = NaN(1, length(sorted_phase{i}));
+    sorted_phase_arc{i,2} = NaN(1, length(sorted_phase{i}));
 end
+
+%Sorting each phase into 2 arcs.
+for i = 1:length(sorted_phase) %(1:10)
+    for j = 1:length(sorted_phase{i}) %(1:500 ish)
+        if ismember(sorted_phase{i}(j), arc1_tlf_times)
+            %Arc 1.
+            sorted_phase_arc{i,1}(j) = sorted_phase{i}(j);
+            
+        elseif ismember(sorted_phase{i}(j), arc2_tlf_times)
+            %Arc 2.
+            sorted_phase_arc{i,2}(j) = sorted_phase{i}(j);
+            
+        else
+            %Intra-arc. 
+        end
+    end
+end
+
+%sorted_phase_arc(~cellfun('isempty',R)) 
+%Removing empty entries from each arc-sorted phase.
+    %Preallocating. Col.1 is ARC 1, Col. 2 is ARC 2.
 
 %Need to modify below and the objects returned by the function if plan
 %consists of more than one arc.
