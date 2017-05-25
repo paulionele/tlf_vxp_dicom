@@ -54,6 +54,9 @@ tlf_times = single(0:20:(20*header.num_snaps - 1)); %do we lose a sample time of
 %Collimator Rotation
 collrot_e = axis_data(:,1,1)';
 collrot_a = axis_data(:,1,2)';
+
+collrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_a);
+
 %Gantry Rotation
 gantrot_e = axis_data(:,2,1)';
 gantrot_a = axis_data(:,2,2)';
