@@ -51,12 +51,13 @@ for i = 1:length_tlf
     end
 end
 
-%Function by Stephen. Reassigns phase points in the discontinuities.
+%Function by Steven Thomas (BCCA). Reassigns phase points in the discontinuities.
 mode_window = 21;
 phase_tlf2 = sorted_phase;
 for jmode = ceil(mode_window/2):length_tlf-ceil(mode_window/2)
     phase_tlf2(jmode) = mode(sorted_phase(jmode-floor(mode_window/2):jmode+floor(mode_window/2)));
 end
+%End function by Steven Thomas.
 
 %Cell array structure for containing 10 phases and indicies that
 %reference TLF points within a specific phase.

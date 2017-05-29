@@ -1,5 +1,8 @@
-clear;clc
+%  Copyright (C) 2017 Paul Ionele - All Rights Reserved
+%  You may NOT use, distribute and modify this code unless express
+%  written and signed consent has been given by the author Paul Ionele.
 
+clear;clc
 %TLF reader.
 %Integers and floats are stored in 'little endian' format.
 
@@ -60,42 +63,76 @@ collrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_a);
 %Gantry Rotation
 gantrot_e = axis_data(:,2,1)';
 gantrot_a = axis_data(:,2,2)';
+
+gantrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_a);
+
 %Y1
 y1_e = axis_data(:,3,1)';
 y1_a = axis_data(:,3,2)';
+
+y1_a_iec121 = arrayfun( @(x) - x, y1_a);
+
 %Y2
 y2_e = axis_data(:,4,1)';
 y2_a = axis_data(:,4,2)';
+
+y2_a_iec121 = y2_a;
+
 %X1
 x1_e = axis_data(:,5,1)';
 x1_a = axis_data(:,5,2)';
+
+x1_a_iec121 = arrayfun( @(x) - x, x1_a);
+
 %X2
 x2_e = axis_data(:,6,1)';
 x2_a = axis_data(:,6,2)';
+
+x2_a_iec121 = x2_a;
+
 %Couch Vrt
 couchvrt_e = axis_data(:,7,1)';
 couchvrt_a = axis_data(:,7,2)';
+
+couchvrt_a_iec121 = arrayfun( @(x) -(x - 100), couchvrt_a);
+
 %Couch Lng
 couchlng_e = axis_data(:,8,1)';
 couchlng_a = axis_data(:,8,2)';
+
+couchlng_a_iec121 = couchlng_a;
+
 %Couch Lat
 couchlat_e = axis_data(:,9,1)';
 couchlat_a = axis_data(:,9,2)';
+
+couch_lat_iec121 = arrayfun( @(x) x - 100, couchlat_a); 
+
 %Couch Rtn
 couchrot_e = axis_data(:,10,1)';
 couchrot_a = axis_data(:,10,2)';
+
+couchrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_a);
+
 %Couch Pit
+%Unused; couch does not support this function. 
+%Value stored is largest FP number represented in single precsn 32-bits.
 couchpit_e = axis_data(:,11,1)';
 couchpit_a = axis_data(:,11,2)';
+
 %Couch Rol
+%Unused; couch does not support this function. 
 couchrol_e = axis_data(:,12,1)';
 couchrol_a = axis_data(:,12,2)';
+
 %Monitor Units
 mu_e = axis_data(:,13,1)';
 mu_a = axis_data(:,13,2)';
+
 %Beam Hold
 beamh_e = axis_data(:,14,1)';
 beamh_a = axis_data(:,14,2)';
+
 %Control Pt
 cp_e = axis_data(:,15,1)';
 cp_a = axis_data(:,15,2)';
