@@ -158,7 +158,7 @@ amplitude = cell2mat(amplitude);
 [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase);
 
 %%%Excising index ranges for seperate arcs.
-[sorted_phase_arc, intra_arc, arc1_tlf_indicies, arc2_tlf_indicies] = arc_separator2(cp_a, subbeam, sorted_phase);
+[sorted_phase_arc, intra_arc, arc1_tlf_indicies, arc2_tlf_indicies] = arc_separator(cp_a, subbeam, sorted_phase);
 
 
 
