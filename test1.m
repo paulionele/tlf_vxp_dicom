@@ -3,10 +3,9 @@ clear;clc
 load('www')
 
 %Function for seperating arcs. Based on control points.
-%Limited to 2 arc/subbeam treatments; in various areas.
 
 number_subbeams  = length(subbeam);
-aa = cell(number_subbeams, 1); %store indicies for each subbeam (2 subbeams for now)
+aa = cell(number_subbeams, 1);
 
 number_intra_arc = length(subbeam) - 1;
 intra_arc = cell(number_intra_arc, 1);
@@ -60,22 +59,22 @@ end
 
 %Storing subbeam index information into pre-existing subbeam structure.
 %New field (arc) added to each sub-structure.
+%DO NOT NEED THIS CURRENTLY.
 % subbeam(1).arc = [];
 % for i = 1:number_subbeams
 %     subbeam(i).arc = aa{i};
 % end
 
-%%%Below this, code only works for 2 subbeams.
 %Set of indicies for each arc.
+%Used for membership testing in the triple loop below.
 arc_tlf_indicies  = cell(number_subbeams, 1);
 for i = 1:number_subbeams  
     %Range of indicies belonging to each arc.
     arc_tlf_indicies{i} = aa{i}(1):aa{i}(2);
 end
 
+%Preallocating with NaN (easy to remove). Col.1 is ARC 1, Col. 2 is ARC 2.
 sorted_phase_arc = cell(10, number_subbeams);
-
-%Preallocating. Col.1 is ARC 1, Col. 2 is ARC 2.
 for i = 1:number_subbeams    
     for j = 1:size(sorted_phase_arc, 1)
         sorted_phase_arc{j,i} = NaN(1, length(sorted_phase{j}));
@@ -83,27 +82,24 @@ for i = 1:number_subbeams
 end
 
 %Sorting each phase into n arcs.
-for k = 1:number_subbeams %1, 2, or 3
+%This can be reduced from 3 loops (probably).
+for n = 1:number_subbeams %1, 2, or 3
     for i = 1:length(sorted_phase) %(1:10)
         for j = 1:length(sorted_phase{i}) %(1:500 ish)
-            if ismember(sorted_phase{i}(j), arc_tlf_indicies{k})
-                %Arc k.
-                sorted_phase_arc{i,k}(j) = sorted_phase{i}(j);
-
-%             elseif ismember(sorted_phase{i}(j), arc2_tlf_indicies)
-%                 %Arc 2.
-%                 sorted_phase_arc{i,2}(j) = sorted_phase{i}(j);
-
-            else
-                %Intra-arc.
+            
+            %Pass thru sorted_phase and test membership in an arc.
+            if ismember(sorted_phase{i}(j), arc_tlf_indicies{n})
+                sorted_phase_arc{i,n}(j) = sorted_phase{i}(j);
             end
+            
         end
     end
 end
+
 %Removing NaN entries.
-for j = 1:number_subbeams
-    for i = 1:size(sorted_phase_arc, 1)
-        sorted_phase_arc{i,j}(isnan(sorted_phase_arc{i,j})) = [];
+for i = 1:number_subbeams
+    for j = 1:size(sorted_phase_arc, 1)
+        sorted_phase_arc{j,i}(isnan(sorted_phase_arc{j,i})) = [];
         %sorted_phase_arc{i,2}(isnan(sorted_phase_arc{i,2})) = [];
     end
 end
