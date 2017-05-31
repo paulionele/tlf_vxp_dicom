@@ -1,6 +1,6 @@
 clear;clc
 
-load('wsp')
+load('www')
 
 %Function for seperating arcs. Based on control points.
 %Limited to 2 arc/subbeam treatments; in various areas.
@@ -28,7 +28,7 @@ for i = 1:number_subbeams
         end
         %Final CP of beam i; get from beam i+1
         af = find(cp_a == subbeam(i+1).cp);
-        af = af(end); %index of time of final CP in sb. seq.
+        af = af(1); %index of time of final CP in sb. seq. [<113>, 113, 113,...]
     
     else
         %Final subbeam.
@@ -108,10 +108,23 @@ for j = 1:number_subbeams
     end
 end
 
-% x = {'xy','yz',nan}
-% x(cellfun(@(x) any(isnan(x)),x)) = []
+%%%Plotting
+sz = 25;
+scatter(tlf_times(sorted_phase_arc{1,1}), mu_a(sorted_phase_arc{1,1}),sz,'r','filled')
+hold on
+scatter(tlf_times(sorted_phase_arc{2,1}), mu_a(sorted_phase_arc{2,1}),sz,'b','filled')
+scatter(tlf_times(sorted_phase_arc{3,1}), mu_a(sorted_phase_arc{3,1}),sz,'c','filled')
+scatter(tlf_times(sorted_phase_arc{5,1}), mu_a(sorted_phase_arc{5,1}),sz,'g','filled')
+scatter(tlf_times(sorted_phase_arc{10,1}), mu_a(sorted_phase_arc{10,1}),sz,'m','filled')
 
-%Need to modify below and the objects returned by the function if plan
-%consists of more than one arc.
-% arc_1 = subbeam(1).arc;
-% arc_2 = subbeam(2).arc;
+scatter(tlf_times(sorted_phase_arc{1,2}), mu_a(sorted_phase_arc{1,2}),sz,'r','filled')
+scatter(tlf_times(sorted_phase_arc{2,2}), mu_a(sorted_phase_arc{2,2}),sz,'b','filled')
+scatter(tlf_times(sorted_phase_arc{3,2}), mu_a(sorted_phase_arc{3,2}),sz,'c','filled')
+scatter(tlf_times(sorted_phase_arc{5,2}), mu_a(sorted_phase_arc{5,2}),sz,'g','filled')
+scatter(tlf_times(sorted_phase_arc{10,2}), mu_a(sorted_phase_arc{10,2}),sz,'m','filled')
+
+
+% plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_a(subbeam(1).arc(1):subbeam(1).arc(2)))
+% hold on
+% plot(tlf_times(subbeam(2).arc(1):subbeam(2).arc(2)), cp_a(subbeam(2).arc(1):subbeam(2).arc(2)),'-g')
+% plot(tlf_times(intra_arc{1}(1):intra_arc{1}(2)), cp_a(intra_arc{1}(1):intra_arc{1}(2)),'-r')
