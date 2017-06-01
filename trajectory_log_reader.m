@@ -6,7 +6,8 @@ clear;clc
 %TLF reader.
 %Integers and floats are stored in 'little endian' format.
 
-file1 = uigetfile('.bin');
+file1 = uigetfile(fullfile(pwd,'data_in','*.bin'),'select file');
+file1 = fullfile('data_in', file1);
 fid1 = fopen(file1,'rb');
 %ens = 'ieee-le'; %order for numerical interpretation of byte sequence
 
@@ -146,21 +147,29 @@ carb_e = axis_data(:,17,1)';
 carb_a = axis_data(:,17,2)';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% (Option 1) Getting VXP file information.
-file1 = uigetfile('.VXP');
-[amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
-vxp_times = cell2mat(timestamp) - timestamp{1,1}; 
-clearvars timestamp validflag ttlin ttlout
-phase     = cell2mat(phase);
-% amplitude = cell2mat(amplitude);
-% mark      = cell2mat(mark);
+%%%Selecting respiratory trace file; either VXP or MW.
+file1 = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
+file1 = fullfile('data_in', file1);
 
-%%%(Option 2) Getting MW file information.
-% file1 = uigetfile('*MW*');
-% [aa] = trajectory_log_reader(file1);
+if strncmp(file1, 'data_in\MW',10) == 1
+    %File selected is MW file. Check isn't robust for all MW variations.
+    [amplitude,phase,rpm_times] = mw_reader(file1);
+else
+    %VXP file.
+    [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
+    rpm_times = cell2mat(timestamp) - timestamp{1,1}; 
+    clearvars timestamp validflag ttlin ttlout
+    phase     = cell2mat(phase);
+    % amplitude = cell2mat(amplitude);
+    % mark      = cell2mat(mark);
 
+end
+
+
+
+%%%%%%%%%CHANGE FOR DIFFERENT FILE TYPES!!!!!!!!!!!!!!!
 %%%Sorting the TLF file information.
-[sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase);
+[sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase);
 
 %%%Excising index ranges for seperate arcs.
 [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_phase);

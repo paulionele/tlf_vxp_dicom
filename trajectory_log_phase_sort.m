@@ -1,5 +1,5 @@
-function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_times, phase)
-%Function for sorting TLF, based on phase information from the VXP file.
+function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase)
+%Function for sorting TLF, based on phase information from the VXP or MW file.
 %sorted_phase : phase-sorted indicies (indicies can be used to ref. axis)
 %phase_tlf2 : 1xM array of phase values (1:1 coorelation with tlf_time)
 
@@ -7,7 +7,7 @@ function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, vxp_t
 %entries.
 
 %Interpolated phase values, based on TLF times.
-phase_tlf = interp1(vxp_times, phase, tlf_times);
+phase_tlf = interp1(rpm_times, phase, tlf_times);
 phase_tlf(isnan(phase_tlf)) = []; %removing NaN entries
 length_tlf = length(phase_tlf); %truncating the time array
 
