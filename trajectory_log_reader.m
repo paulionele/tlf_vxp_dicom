@@ -131,8 +131,8 @@ mu_e = axis_data(:,13,1)';
 mu_a = axis_data(:,13,2)';
 
 %Beam Hold
-beamh_e = axis_data(:,14,1)';
-beamh_a = axis_data(:,14,2)';
+beamh_e = axis_data(:,14,1)' / 2;
+beamh_a = axis_data(:,14,2)' / 2;
 
 %Control Pt
 cp_e = axis_data(:,15,1)';
@@ -153,7 +153,7 @@ file1 = fullfile('data_in', file1);
 
 if strncmp(file1, 'data_in\MW',10) == 1
     %File selected is MW file. Check isn't robust for all MW variations.
-    [amplitude,phase,rpm_times] = mw_reader(file1);
+    [amplitude,phase,rpm_times,beamenable] = mw_reader(file1);
 else
     %VXP file.
     [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
@@ -165,29 +165,36 @@ else
 
 end
 
-
-
-%%%%%%%%%CHANGE FOR DIFFERENT FILE TYPES!!!!!!!!!!!!!!!
 %%%Sorting the TLF file information.
 [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase);
 
 %%%Excising index ranges for seperate arcs.
 [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_phase);
 
-%%%Plotting
-sz = 25;
-scatter(tlf_times(sorted_phase_arc{1,1}), mu_a(sorted_phase_arc{1,1}),sz,'r','filled')
-hold on
-scatter(tlf_times(sorted_phase_arc{2,1}), mu_a(sorted_phase_arc{2,1}),sz,'b','filled')
-scatter(tlf_times(sorted_phase_arc{3,1}), mu_a(sorted_phase_arc{3,1}),sz,'c','filled')
-scatter(tlf_times(sorted_phase_arc{5,1}), mu_a(sorted_phase_arc{5,1}),sz,'g','filled')
-scatter(tlf_times(sorted_phase_arc{10,1}), mu_a(sorted_phase_arc{10,1}),sz,'m','filled')
 
-scatter(tlf_times(sorted_phase_arc{1,2}), mu_a(sorted_phase_arc{1,2}),sz,'r','filled')
-scatter(tlf_times(sorted_phase_arc{2,2}), mu_a(sorted_phase_arc{2,2}),sz,'b','filled')
-scatter(tlf_times(sorted_phase_arc{3,2}), mu_a(sorted_phase_arc{3,2}),sz,'c','filled')
-scatter(tlf_times(sorted_phase_arc{5,2}), mu_a(sorted_phase_arc{5,2}),sz,'g','filled')
-scatter(tlf_times(sorted_phase_arc{10,2}), mu_a(sorted_phase_arc{10,2}),sz,'m','filled')
+
+
+plot(rpm_times(1:500),beamenable(1:500),'b')
+hold on
+plot(tlf_times(1:500),beamh_a(1:500),'r')
+ylim([-0.5,1.5])
+legend('RPM/MW Recording', 'TLF Recording')
+
+
+%%%Plotting
+% sz = 25;
+% scatter(tlf_times(sorted_phase_arc{1,1}), mu_a(sorted_phase_arc{1,1}),sz,'r','filled')
+% hold on
+% scatter(tlf_times(sorted_phase_arc{2,1}), mu_a(sorted_phase_arc{2,1}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,1}), mu_a(sorted_phase_arc{3,1}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,1}), mu_a(sorted_phase_arc{5,1}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,1}), mu_a(sorted_phase_arc{10,1}),sz,'m','filled')
+
+% scatter(tlf_times(sorted_phase_arc{1,2}), mu_a(sorted_phase_arc{1,2}),sz,'r','filled')
+% scatter(tlf_times(sorted_phase_arc{2,2}), mu_a(sorted_phase_arc{2,2}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,2}), mu_a(sorted_phase_arc{3,2}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,2}), mu_a(sorted_phase_arc{5,2}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,2}), mu_a(sorted_phase_arc{10,2}),sz,'m','filled')
 
 
 % plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_a(subbeam(1).arc(1):subbeam(1).arc(2)))
