@@ -57,6 +57,7 @@ end
 while ischar(tchar)
     tchar = fgetl(fid);
     if ischar(tchar) == 1
+        %Is this test necessary?
         ts = textscan(tchar, '%s', 'Delimiter', ',');
 
         st1 = str2double(ts{1}{1});
