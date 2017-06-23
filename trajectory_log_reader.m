@@ -247,9 +247,9 @@ end
 %shorter than the RPM recording.
 
 
-% beamenable_q = interp1(rpm_times, beamenable, tlf_times); %queried points
-% tlf_times(find(isnan(beamenable_q)))    = 0;
-% beamenable_q(find(isnan(beamenable_q))) = 0;
+beamenable_q = interp1(rpm_times, beamenable, tlf_times); %queried points
+tlf_times(find(isnan(beamenable_q)))    = 0;
+beamenable_q(find(isnan(beamenable_q))) = 0;
 
 %Any points that do NOT have bitvals 0 or 1, need to be reassigned. This is
 %accomplished using a function based on that by Steven Thomas and
@@ -257,6 +257,8 @@ end
 
 % Now beamenable_q is in tlf_time. We need the match such that the last
 % beam on point is at tlf_time = 1.91*10^4 ms.
+
+save('www.mat', beamenable_q, tlf_times);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %FUNCTION CALLS FOR PHASE SORTING FOLLOWED BY ARC SORTING.
