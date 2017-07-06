@@ -11,7 +11,7 @@ function [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_pha
 % OUTPUTS: same structure as sorted_phase, except additional columns may be
 % present if multiple subbeams exist. 
 
-% PART 1 - Indentifying the index range for each subbeam.
+% PART 1 - Identifying the index range for each subbeam.
 %The information is unusual in the sense that the starting CP for any beam
 %that is NOT the first subbeam in the sequence, is given by the CP listed
 %for that subbeam, plus one. EX: if subbeam 2 of 3 lists a CP of 113, then

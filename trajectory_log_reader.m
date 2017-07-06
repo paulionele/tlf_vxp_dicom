@@ -57,7 +57,18 @@ for i = 1:header.num_sbeams
 end
 
 total_samples = sum(header.axes_sampling); %parameters per snapshot
-axis_data = zeros(header.num_snaps, total_samples, 2); %2 -> actual and measured
+
+%axis_data is where the machine information extracted from the TLF is
+%stored. It is a 3D array, with the first dimension (rows) as the number of
+%snapshots (recordings, 1 recording every 20 ms), the second dimension
+%(cols) as the number of machine parameters or axes that are
+%monitored/recorded (this is a fixed number), and the third dimension
+%having a length of 2. In the third dimension, the first values indexed for
+%any given m or n, represent the EXPECTED machine values. The second values
+%indexed represent the ACTUAL machine values recorded. Overall, we can
+%think of the the axis_data array as two overlapping planes where the first
+%place consists of expected values and the second plane of actual values.
+axis_data = zeros(header.num_snaps, total_samples, 2); %2 -> expected and actual
 
 %Data is read from TLF and stored immediately in axis_data array.
 for i = 1:header.num_snaps  %snapshot every 20 ms
@@ -191,10 +202,10 @@ carb_a = axis_data(:,17,2)';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %USER PROMPT FOR MW OR VXP SELECTION.
 
-file1 = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
-file1 = fullfile('data_in', file1);
+[file1, PATHNAME] = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
+file1 = fullfile(PATHNAME, file1);
 
-if strncmp(file1, 'data_in\MW',10) == 1
+if strfind(file1, 'MW') > 0
     %File selected is MW file. Check isn't robust for all MW variations.
     [amplitude,phase,rpm_times,beamenable] = mw_reader(file1);
     
@@ -221,7 +232,6 @@ if strncmp(file1, 'data_in\MW',10) == 1
         else
             disp(exception.identifier)
             error('An unexpected error has occurred.')
-            break
         end
     end
 else
@@ -247,18 +257,22 @@ end
 %shorter than the RPM recording.
 
 
-beamenable_q = interp1(rpm_times, beamenable, tlf_times); %queried points
-tlf_times(find(isnan(beamenable_q)))    = 0;
-beamenable_q(find(isnan(beamenable_q))) = 0;
+% beamenable_q = interp1(rpm_times, beamenable, tlf_times); %queried points
+% tlf_times(find(isnan(beamenable_q)))    = 0;
+% beamenable_q(find(isnan(beamenable_q))) = 0;
+% 
+% %Any points that do NOT have bitvals 0 or 1, need to be reassigned. This is
+% %accomplished using a function based on that by Steven Thomas and
+% %implemented in the trajectory_log_phase_sort function.
+% 
+% % Now beamenable_q is in tlf_time. We need the match such that the last
+% % beam on point is at tlf_time = 1.91*10^4 ms.
 
-%Any points that do NOT have bitvals 0 or 1, need to be reassigned. This is
-%accomplished using a function based on that by Steven Thomas and
-%implemented in the trajectory_log_phase_sort function.
+%%% Implemented process for synchronization. The TLF 'leads' the MW in
+%%% time, so a simple shift applied to to the TLF can sync fairly well.
 
-% Now beamenable_q is in tlf_time. We need the match such that the last
-% beam on point is at tlf_time = 1.91*10^4 ms.
+tlf_times = tlf_times + 4700; %yup, that's it.
 
-save('www.mat', beamenable_q, tlf_times);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %FUNCTION CALLS FOR PHASE SORTING FOLLOWED BY ARC SORTING.

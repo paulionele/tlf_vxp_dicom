@@ -23,7 +23,7 @@ phase_tlf = interp1(rpm_times, phase, tlf_times);
 phase_tlf(isnan(phase_tlf)) = []; %removing NaN entries
 length_tlf = length(phase_tlf); %truncating the time array
 
-%Defining 10 equall spaced phases.
+%Defining 10 equally spaced phases.
 aa = linspace(0, 2*pi, 11);
 
 %Array storing phase values for each index (tlf_time).
