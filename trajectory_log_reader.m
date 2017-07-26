@@ -28,6 +28,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % READING TLF
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Header.
 header.signiture   = fread(fid1, 16, 'char=>char')'; %*char is shorthand
@@ -68,7 +69,7 @@ total_samples = sum(header.axes_sampling); %parameters per snapshot
 %indexed represent the ACTUAL machine values recorded. Overall, we can
 %think of the the axis_data array as two overlapping planes where the first
 %place consists of expected values and the second plane of actual values.
-axis_data = zeros(header.num_snaps, total_samples, 2); %2 -> expected and actual
+axis_data = zeros(header.num_snaps, total_samples, 2);
 
 %Data is read from TLF and stored immediately in axis_data array.
 for i = 1:header.num_snaps  %snapshot every 20 ms
@@ -97,6 +98,7 @@ axis_data(1,13,:) = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SCALE TRANFORMATIONS.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %First snap is at 0 ms (?), and each preceeding snap is at 20*n ms; where n
 %is the snap number. So an array of times:
@@ -201,6 +203,7 @@ carb_a = axis_data(:,17,2)';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %USER PROMPT FOR MW OR VXP SELECTION.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [file1, PATHNAME] = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
 file1 = fullfile(PATHNAME, file1);
@@ -247,6 +250,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SYNCHRONIZE MW AND TLF.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Resampling MW at increasing sampling frequency (TLF; 20 ms). tlf_times are
 %the query points for 'beamenable'. If tlf_times(end) > rpm_times(end), the
@@ -276,6 +280,7 @@ tlf_times = tlf_times + 4700; %yup, that's it.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %FUNCTION CALLS FOR PHASE SORTING FOLLOWED BY ARC SORTING.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sorting the TLF file information into 10 different phases.
 [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase);
@@ -284,7 +289,21 @@ tlf_times = tlf_times + 4700; %yup, that's it.
 [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_phase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%MU SHIFT APPLIED
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%TBD TBD TBD
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%WRITING OUT DICOM RT PLANS (10 or 20)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%TBD TBD TBD
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %PLOTTING.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 
 plot(rpm_times,beamenable,'b')
