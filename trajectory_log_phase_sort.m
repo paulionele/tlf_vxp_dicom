@@ -1,16 +1,17 @@
 function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase)
-%Function for phase sorting TLF data into 10 phases, based on phase
-%information from the VXP or MW file.
+%Function for phase sorting TLF data into 10 (or 20 phases, code would need
+%to be re-written for that though) phases, based on phase information from
+%the VXP or MW file.
 
-% INPUTS: tlf_times (20 ms sampling interval), rpm_times and phase
+% INPUTS: tlf_times (20 ms sampling interval), rpm_times, and phase
 % (sampling interval and phase specific to MW or VXP, depending on user
 % selection).
 
 % OUTPUTS: sorted_phase (phase-sorted indicies where indicies can be used
-% to ref. axis), phase_tlf2 : 1xM array of phase values (1:1 coorelation
-% with tlf_time), not currently used!
+% to ref. axis), phase_tlf2 which is a 1xM array of phase values (1:1
+% coorelation with tlf_time), not currently used!
 
-% Complete description of PART 1 and PART 2.
+% TBD: Complete description of PART 1 and PART 2.
 
 %This function can be improved by preallocating matrix then removing empty
 %entries.
@@ -116,7 +117,7 @@ end
 %Returned is indicies belonging to each phase.
 sorted_phase = {p0; p10; p20; p30; p40; p50; p60; p70; p80; p90};
 
-%Original function by S. Thomas.
+%Original function by S. Thomas for reference.
 %
 % mode_window=21
 % Phase_tlf2=Phase_tlf;

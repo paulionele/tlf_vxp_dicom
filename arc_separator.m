@@ -22,14 +22,14 @@ function [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_pha
 %CP of 113, then this is the final CP of subbeam 2 of 3.
 
 % PART 2 - Sorting the phase_sorted indicies into n different arcs.
-%The goal is now to seperate each of the 10 phases in n different arcs.
-%I.e. if there is 2 arcs, then phase 0 will be seperated into arc 1 and arc
-%2. The cell array aa contains the absolute index range for each subbeam.
-%From a previous function, this current function receives a phase-sorted
-%array of indicies (tlf indicies, number of indicies = number of 20ms
-%snapshots); an array for each phase. We now pass through each of the 10
-%phases, and for a given phase, test membership of an index to the index
-%range for each arc as determined in PART 1. Returned is a cell array
+%The goal is now to seperate each of the 10 (or 20!) phases in n different
+%arcs. I.e. if there is 2 arcs, then phase 0 will be seperated into arc 1
+%and arc 2. The cell array aa contains the absolute index range for each
+%subbeam. From a previous function, this current function receives a
+%phase-sorted array of indicies (tlf indicies, number of indicies = number
+%of 20ms snapshots); an array for each phase. We now pass through each of
+%the 10 phases, and for a given phase, test membership of an index to the
+%index range for each arc as determined in PART 1. Returned is a cell array
 %sorted_phase_arc that maintains the sorted phase_phase structure, but now
 %has n cols for the n arcs delivered.
 

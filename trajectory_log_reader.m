@@ -30,6 +30,8 @@ end
 % READING TLF
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+disp('Processing the TLF binary file...')
+
 %Header.
 header.signiture   = fread(fid1, 16, 'char=>char')'; %*char is shorthand
 header.version     = fread(fid1, 16, '*char')';
@@ -99,41 +101,48 @@ axis_data(1,13,:) = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SCALE TRANFORMATIONS.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%We will proceed with using the expected values "_e", since that is what is
+%used in Tony's code.
 
 %First snap is at 0 ms (?), and each preceeding snap is at 20*n ms; where n
 %is the snap number. So an array of times:
 tlf_times = single(0:20:(20*header.num_snaps - 1)); %do we lose a sample time off the end???
-tlf_times = tlf_times(1:end-rc); %tlf truncated
+tlf_times = tlf_times(1:end - rc); %tlf truncated
 
 %Collimator Rotation
 collrot_e = axis_data(:,1,1)';
 collrot_a = axis_data(:,1,2)';
 
 collrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_a);
+collrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_e);
 
 %Gantry Rotation
 gantrot_e = axis_data(:,2,1)';
 gantrot_a = axis_data(:,2,2)';
 
 gantrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_a);
+gantrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_e);
 
 %Y1
 y1_e = axis_data(:,3,1)';
 y1_a = axis_data(:,3,2)';
 
 y1_a_iec121 = arrayfun( @(x) - x, y1_a);
+y1_e_iec121 = arrayfun( @(x) - x, y1_e);
 
 %Y2
 y2_e = axis_data(:,4,1)';
 y2_a = axis_data(:,4,2)';
 
 y2_a_iec121 = y2_a;
+y2_e_iec121 = y2_e;
 
 %X1
 x1_e = axis_data(:,5,1)';
 x1_a = axis_data(:,5,2)';
 
 x1_a_iec121 = arrayfun( @(x) - x, x1_a);
+x1_e_iec121 = arrayfun( @(x) - x, x1_e);
 
 %X2
 
@@ -141,30 +150,35 @@ x2_e = axis_data(:,6,1)';
 x2_a = axis_data(:,6,2)';
 
 x2_a_iec121 = x2_a;
+x2_e_iec121 = x2_e;
 
 %Couch Vrt
 couchvrt_e = axis_data(:,7,1)';
 couchvrt_a = axis_data(:,7,2)';
 
 couchvrt_a_iec121 = arrayfun( @(x) -(x - 100), couchvrt_a);
+couchvrt_e_iec121 = arrayfun( @(x) -(x - 100), couchvrt_e);
 
 %Couch Lng
 couchlng_e = axis_data(:,8,1)';
 couchlng_a = axis_data(:,8,2)';
 
 couchlng_a_iec121 = couchlng_a;
+couchlng_e_iec121 = couchlng_e;
 
 %Couch Lat
 couchlat_e = axis_data(:,9,1)';
 couchlat_a = axis_data(:,9,2)';
 
-couch_lat_iec121 = arrayfun( @(x) x - 100, couchlat_a);
+couchlat_a_iec121 = arrayfun( @(x) x - 100, couchlat_a);
+couchlat_e_iec121 = arrayfun( @(x) x - 100, couchlat_e);
 
 %Couch Rtn
 couchrot_e = axis_data(:,10,1)';
 couchrot_a = axis_data(:,10,2)';
 
 couchrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_a);
+couchrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_e);
 
 %Couch Pit
 %Unused; couch does not support this function.
@@ -202,147 +216,164 @@ carb_a = axis_data(:,17,2)';
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%USER PROMPT FOR MW OR VXP SELECTION.
+%USER PROMPT FOR PREPROGRAMMED WAVEFORM OR MW-VXP SELECTION.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc;
+user_query_waveform = input('Press 1 for pre-programmed waveform option, ENTER key for MW-VXP: ');
 
-[file1, PATHNAME] = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
-file1 = fullfile(PATHNAME, file1);
-
-if strfind(file1, 'MW') > 0
-    %File selected is MW file. Check isn't robust for all MW variations.
-    [amplitude,phase,rpm_times,beamenable] = mw_reader(file1);
+if isempty(user_query_waveform)
+    %Proceed with processing selected MW-VXP file.
+    disp('User selected MW-VXP.')
     
-    %Removing recordings from MW; based on initial beam hold. While the
-    %beam is initially held, those recordings (all cooresponding
-    %axis/parameters) are removed.
+    [file1, PATHNAME] = uigetfile(fullfile(pwd,'data_in','*.VXP;*MW*'),'select file');
+    FULLPATH = fullfile(PATHNAME, file1);
     
-    try
-        while 1
-            if beamenable(1) == 0
-                amplitude(1)  = [];
-                phase(1)      = [];
-                rpm_times(1)  = [];
-                beamenable(1) = [];
-            else
+    if strfind(file1, 'MW') > 0
+        %File selected is MW file. Check isn't robust for all MW variations.
+        [amplitude,phase,rpm_times,beamenable] = mw_reader(FULLPATH);
+        
+        %Removing recordings from MW; based on initial beam hold. While the
+        %beam is initially held, those recordings (all cooresponding
+        %axis/parameters) are removed.
+        
+        try
+            while 1
+                if beamenable(1) == 0
+                    amplitude(1)  = [];
+                    phase(1)      = [];
+                    rpm_times(1)  = [];
+                    beamenable(1) = [];
+                else
+                    break
+                end
+            end
+        catch exception
+            if strcmp(exception.identifier, 'MATLAB:badsubscript')
+                disp('No "beam on" instances present in MW recording.')
+                disp('Exiting program...')
                 break
+            else
+                disp(exception.identifier)
+                error('An unexpected error has occurred.')
             end
         end
-    catch exception
-        if strcmp(exception.identifier, 'MATLAB:badsubscript')
-            disp('No "beam on" instances present in MW recording.')
-            disp('Exiting program...')
-            break
-        else
-            disp(exception.identifier)
-            error('An unexpected error has occurred.')
-        end
+    else
+        %VXP file.
+        [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(FULLPATH);
+        rpm_times = cell2mat(timestamp) - timestamp{1,1};
+        clearvars timestamp validflag ttlin ttlout
+        phase     = cell2mat(phase);
+        % amplitude = cell2mat(amplitude);
+        % mark      = cell2mat(mark);
+        
     end
 else
-    %VXP file.
-    [amplitude,phase,timestamp,validflag,ttlin,ttlout,mark,headerv] = vxp_reader(file1);
-    rpm_times = cell2mat(timestamp) - timestamp{1,1};
-    clearvars timestamp validflag ttlin ttlout
-    phase     = cell2mat(phase);
-    % amplitude = cell2mat(amplitude);
-    % mark      = cell2mat(mark);
-    
+    %Call for waveform generator function.
+    period = input('Enter a period in seconds or hit ENTER key for default (4s): ');
+    [rpm_times, phase] = waveform_generator(period);
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SYNCHRONIZE MW AND TLF.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Resampling MW at increasing sampling frequency (TLF; 20 ms). tlf_times are
-%the query points for 'beamenable'. If tlf_times(end) > rpm_times(end), the
-%interp1 function will return NaN values for beamenable_q beyond
-%rpm_times(end). These NaN values are removed from beamenable_q, AND
-%tlf_times is shorted an amount cooresponding to the NaN values removed.
-%This is probably unecessary as it seems the TLF recording is always
-%shorter than the RPM recording.
-
-
-% beamenable_q = interp1(rpm_times, beamenable, tlf_times); %queried points
-% tlf_times(find(isnan(beamenable_q)))    = 0;
-% beamenable_q(find(isnan(beamenable_q))) = 0;
-% 
-% %Any points that do NOT have bitvals 0 or 1, need to be reassigned. This is
-% %accomplished using a function based on that by Steven Thomas and
-% %implemented in the trajectory_log_phase_sort function.
-% 
-% % Now beamenable_q is in tlf_time. We need the match such that the last
-% % beam on point is at tlf_time = 1.91*10^4 ms.
 
 %%% Implemented process for synchronization. The TLF 'leads' the MW in
-%%% time, so a simple shift applied to to the TLF can sync fairly well.
+%%% time, so a simple shift applied to to the TLF can sync fairly well. The
+%%% quality of the synchronization may be variable. In the future, a more
+%%% sophisticated matching algorithm may be required, possibly one based on
+%%% minimizing 
 
-tlf_times = tlf_times + 4700; %yup, that's it.
-
+if isempty(user_query_waveform)
+    %The MW-VXP option has been selected.
+    tlf_times_shifted = tlf_times + 4700; %yup, that's it.
+else
+    %Copy and rename so sorting functions work.
+    %tlf_times will be used for plotting purposes from now on.
+    tlf_times_shifted = tlf_times;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %FUNCTION CALLS FOR PHASE SORTING FOLLOWED BY ARC SORTING.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sorting the TLF file information into 10 different phases.
-[sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase);
+[sorted_phase, ~] = trajectory_log_phase_sort(tlf_times_shifted, rpm_times, phase);
 
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
-[sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_phase);
+[sorted_phase_arc, intra_arc] = arc_separator(cp_e, subbeam, sorted_phase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%MU SHIFT APPLIED
+%PROCESSING FOR RP-PLAN CONSTRUCTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The data retrieved from the TLF and sorted by the selected waveform needs
+% to be further processed.
+% For each phased plan to be constructed, the MU at each CP must be
+% specified in the form of "CumulativeMetersetWeight" (CMW) as found under
+% "BeamSequence" -> "Item_x" (beam number) -> "ControlPointSequence" -> 
+% "Item_xxx" (hundred+ CPs) -> "CumulativeMetersetWeight". CMU is equal to
+% the cumulative MU delivered up to and including that CP in that field,
+% divided by the total MU to be delivered in that field.
 
-%TBD TBD TBD
+% The data needs to be reprocessed so that it has a suitable form for
+% writing to the DICOM RP file. Determining the cumulative MU delivered for
+% each field is the first step.
+
+cumulative_mu = zeros(1, size(sorted_phase_arc, 2));
+
+for i = 1:length(cumulative_mu)
+    for j = 1:size(sorted_phase_arc, 1)
+        mu_e_phase_arc = mu_e(sorted_phase_arc{j,i});
+        cumulative_mu(i) = cumulative_mu(i) + mu_e_phase_arc(end);
+    end
+end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %WRITING OUT DICOM RT PLANS (10 or 20)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% Will this be a separate function? If we want it as a seperate function
+% and many inputs are required, then we will probably have to pass the
+% arguments as a structure or cell array.
 %TBD TBD TBD
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %PLOTTING.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
 
-plot(rpm_times,beamenable,'b')
+tlf_times = tlf_times/1000; %converting ms to s
+
+% figure;
+% plot(rpm_times,beamenable,'b')
+% hold on
+% plot(tlf_times,beamh_e,'r')
+% ylim([-0.5,1.5])
+% legend('RPM/MW Recording', 'TLF Recording')
+
+
+f1 = figure();
+figure(f1);
+sz = 25;
+scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),sz,'r','filled')
+title('TLF Times vs. Total MU Delivered During Treatment')
+xlabel('TLF Times [s]')
+ylabel('Total MU Delivered')
+
 hold on
-plot(tlf_times,beamh_a,'r')
-ylim([-0.5,1.5])
-legend('RPM/MW Recording', 'TLF Recording')
+scatter(tlf_times(sorted_phase_arc{2,1}), mu_e(sorted_phase_arc{2,1}),sz,'b','filled')
+scatter(tlf_times(sorted_phase_arc{3,1}), mu_e(sorted_phase_arc{3,1}),sz,'c','filled')
+scatter(tlf_times(sorted_phase_arc{5,1}), mu_e(sorted_phase_arc{5,1}),sz,'g','filled')
+scatter(tlf_times(sorted_phase_arc{10,1}), mu_e(sorted_phase_arc{10,1}),sz,'m','filled')
 
-% t_tlf = 1.91*10^4;
-% t_mw  = 2.366*10^4;
-%
-% delta = t_mw - t_tlf;
-
-
-
-
+scatter(tlf_times(sorted_phase_arc{1,2}), mu_e(sorted_phase_arc{1,2}),sz,'r','filled')
+scatter(tlf_times(sorted_phase_arc{2,2}), mu_e(sorted_phase_arc{2,2}),sz,'b','filled')
+scatter(tlf_times(sorted_phase_arc{3,2}), mu_e(sorted_phase_arc{3,2}),sz,'c','filled')
+scatter(tlf_times(sorted_phase_arc{5,2}), mu_e(sorted_phase_arc{5,2}),sz,'g','filled')
+scatter(tlf_times(sorted_phase_arc{10,2}), mu_e(sorted_phase_arc{10,2}),sz,'m','filled')
 
 
-
-
-
-
-%%%Plotting
-% sz = 25;
-% scatter(tlf_times(sorted_phase_arc{1,1}), mu_a(sorted_phase_arc{1,1}),sz,'r','filled')
+% plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_e(subbeam(1).arc(1):subbeam(1).arc(2)))
 % hold on
-% scatter(tlf_times(sorted_phase_arc{2,1}), mu_a(sorted_phase_arc{2,1}),sz,'b','filled')
-% scatter(tlf_times(sorted_phase_arc{3,1}), mu_a(sorted_phase_arc{3,1}),sz,'c','filled')
-% scatter(tlf_times(sorted_phase_arc{5,1}), mu_a(sorted_phase_arc{5,1}),sz,'g','filled')
-% scatter(tlf_times(sorted_phase_arc{10,1}), mu_a(sorted_phase_arc{10,1}),sz,'m','filled')
-%
-% scatter(tlf_times(sorted_phase_arc{1,2}), mu_a(sorted_phase_arc{1,2}),sz,'r','filled')
-% scatter(tlf_times(sorted_phase_arc{2,2}), mu_a(sorted_phase_arc{2,2}),sz,'b','filled')
-% scatter(tlf_times(sorted_phase_arc{3,2}), mu_a(sorted_phase_arc{3,2}),sz,'c','filled')
-% scatter(tlf_times(sorted_phase_arc{5,2}), mu_a(sorted_phase_arc{5,2}),sz,'g','filled')
-% scatter(tlf_times(sorted_phase_arc{10,2}), mu_a(sorted_phase_arc{10,2}),sz,'m','filled')
-
-
-% plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_a(subbeam(1).arc(1):subbeam(1).arc(2)))
-% hold on
-% plot(tlf_times(subbeam(2).arc(1):subbeam(2).arc(2)), cp_a(subbeam(2).arc(1):subbeam(2).arc(2)),'-g')
+% plot(tlf_times(subbeam(2).arc(1):subbeam(2).arc(2)), cp_e(subbeam(2).arc(1):subbeam(2).arc(2)),'-g')
 % plot(tlf_times(intra_arc{1}(1):intra_arc{1}(2)), cp_a(intra_arc{1}(1):intra_arc{1}(2)),'-r')
