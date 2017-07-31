@@ -23,7 +23,6 @@ try
 catch exception
     %Can add exceptions here later.
     disp(exception.identifier)
-    break
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -251,7 +250,6 @@ if isempty(user_query_waveform)
             if strcmp(exception.identifier, 'MATLAB:badsubscript')
                 disp('No "beam on" instances present in MW recording.')
                 disp('Exiting program...')
-                break
             else
                 disp(exception.identifier)
                 error('An unexpected error has occurred.')
@@ -297,10 +295,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sorting the TLF file information into 10 different phases.
-[sorted_phase, ~] = trajectory_log_phase_sort(tlf_times_shifted, rpm_times, phase);
+[sorted_phase, ~] = phase_sorter(tlf_times_shifted, rpm_times, phase);
 
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
-[sorted_phase_arc, intra_arc] = arc_separator(cp_e, subbeam, sorted_phase);
+[sorted_phase_arc, intra_arc] = arc_sorter(cp_e, subbeam, sorted_phase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %PROCESSING FOR RP-PLAN CONSTRUCTION
