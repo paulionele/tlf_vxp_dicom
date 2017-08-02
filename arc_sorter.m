@@ -1,4 +1,4 @@
-function [sorted_phase_arc, intra_arc] = arc_separator(cp_a, subbeam, sorted_phase)
+function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_a, subbeam, sorted_phase)
 %Function for seperating arcs. The function works by identifying the number
 %of subbeams and using the control point (CP) information stored with each
 %subbeam, the starting control point. Additionally, the total number of CPs

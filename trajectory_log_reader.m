@@ -180,13 +180,13 @@ couchrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_a);
 couchrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_e);
 
 %Couch Pit
-%Unused; couch does not support this function.
+%Unused! Couch does not support this function.
 %Value stored is largest FP number represented in single precsn 32-bits.
 couchpit_e = axis_data(:,11,1)';
 couchpit_a = axis_data(:,11,2)';
 
 %Couch Rol
-%Unused; couch does not support this function.
+%Unused! Couch does not support this function.
 couchrol_e = axis_data(:,12,1)';
 couchrol_a = axis_data(:,12,2)';
 
@@ -274,12 +274,10 @@ end
 %SYNCHRONIZE MW AND TLF.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%% Implemented process for synchronization. The TLF 'leads' the MW in
-%%% time, so a simple shift applied to to the TLF can sync fairly well. The
-%%% quality of the synchronization may be variable. In the future, a more
-%%% sophisticated matching algorithm may be required, possibly one based on
-%%% minimizing 
+% Implemented process for synchronization. The TLF 'leads' the MW in
+% time, so a simple shift applied to to the TLF can sync fairly well. The
+% quality of the synchronization may be variable. In the future, a more
+% sophisticated matching algorithm may be required.
 
 if isempty(user_query_waveform)
     %The MW-VXP option has been selected.
@@ -298,7 +296,7 @@ end
 [sorted_phase, ~] = phase_sorter(tlf_times_shifted, rpm_times, phase);
 
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
-[sorted_phase_arc, intra_arc] = arc_sorter(cp_e, subbeam, sorted_phase);
+[sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %PROCESSING FOR RP-PLAN CONSTRUCTION

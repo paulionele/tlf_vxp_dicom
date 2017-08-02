@@ -1,4 +1,4 @@
-function [sorted_phase, phase_tlf2] = trajectory_log_phase_sort(tlf_times, rpm_times, phase)
+function [sorted_phase, phase_tlf2] = phase_sorter(tlf_times, rpm_times, phase)
 %Function for phase sorting TLF data into 10 (or 20 phases, code would need
 %to be re-written for that though) phases, based on phase information from
 %the VXP or MW file.
