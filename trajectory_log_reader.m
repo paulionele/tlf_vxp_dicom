@@ -302,7 +302,15 @@ end
 %PROCESSING FOR RP-PLAN CONSTRUCTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The data retrieved from the TLF and sorted by the selected waveform needs
-% to be further processed.
+% to be further processed. Processed data needs to be used to modify 10
+% pre-existing DICOM RP files so that 10 or 20 phased RP files are
+% produced. These "phased-plans" can be imported into Eclipse and a
+% sum-dose computed.
+
+% Basically, the overall process is:
+% - record TLF and waveform, sort TLF data using the waveform, and process
+%   into a format following DICOM standards and accepted by Eclipse.
+% - expos
 % For each phased plan to be constructed, the MU at each CP must be
 % specified in the form of "CumulativeMetersetWeight" (CMW) as found under
 % "BeamSequence" -> "Item_x" (beam number) -> "ControlPointSequence" -> 
@@ -313,6 +321,8 @@ end
 % The data needs to be reprocessed so that it has a suitable form for
 % writing to the DICOM RP file. Determining the cumulative MU delivered for
 % each field is the first step.
+
+
 
 cumulative_mu = zeros(1, size(sorted_phase_arc, 2));
 
