@@ -311,6 +311,8 @@ end
 % - record TLF and waveform, sort TLF data using the waveform, and process
 %   into a format following DICOM standards and accepted by Eclipse.
 % - expos
+% to be further processed.
+
 % For each phased plan to be constructed, the MU at each CP must be
 % specified in the form of "CumulativeMetersetWeight" (CMW) as found under
 % "BeamSequence" -> "Item_x" (beam number) -> "ControlPointSequence" -> 
@@ -321,6 +323,17 @@ end
 % The data needs to be reprocessed so that it has a suitable form for
 % writing to the DICOM RP file. Determining the cumulative MU delivered for
 % each field is the first step.
+%To report the max MU difference between snapshots.
+mu_diff_max = [max(diff(mu_e(arc_tlf_indicies{1}))), max(diff(mu_e(arc_tlf_indicies{2})))]
+mu_diff_threshold = max(mu_diff_max) + 0.2; %arbitrarily chosen
+mu_diff_indicies = find(diff(mu_e( sorted_phase_arc{1,1} )) > mu_diff_threshold);
+
+% scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),sz,'r','filled')
+% hold on
+% scatter(tlf_times(sorted_phase_arc{1,1}(mu_diff_indicies)), mu_e(sorted_phase_arc{1,1}(mu_diff_indicies)),15,'b','filled')
+
+for i = 1:length(mu_diff_indicies)
+    
 
 
 
