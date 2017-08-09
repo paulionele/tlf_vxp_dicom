@@ -88,14 +88,16 @@ fclose(fid1);
 %cooresponding recording is reset to zero.
 rc = 0; %to count number of lines removed
 while 1
-    if axis_data(1, 14, 2) == 2
+    if (axis_data(1, 14, 2) == 2) || (axis_data(2, 14, 2) == 2) || (axis_data(1,13,1) < 0.01)
+        %If any elements are non-zero (indicates beam-held) or mu_e < 0.01.
         axis_data(1,:,:) = [];
         rc = rc + 1;
     else
         break
     end
 end
-axis_data(1,13,:) = 0;
+axis_data(1,13,:) = 0; %set initial MU to zero.
+axis_data(1,15,:) = 0; %set initial CP to zero.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SCALE TRANFORMATIONS.
@@ -182,13 +184,13 @@ couchrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_e);
 %Couch Pit
 %Unused! Couch does not support this function.
 %Value stored is largest FP number represented in single precsn 32-bits.
-couchpit_e = axis_data(:,11,1)';
-couchpit_a = axis_data(:,11,2)';
+%couchpit_e = axis_data(:,11,1)';
+%couchpit_a = axis_data(:,11,2)';
 
 %Couch Rol
 %Unused! Couch does not support this function.
-couchrol_e = axis_data(:,12,1)';
-couchrol_a = axis_data(:,12,2)';
+%couchrol_e = axis_data(:,12,1)';
+%couchrol_a = axis_data(:,12,2)';
 
 %Monitor Units
 mu_e = axis_data(:,13,1)';
@@ -277,7 +279,7 @@ end
 % Implemented process for synchronization. The TLF 'leads' the MW in
 % time, so a simple shift applied to to the TLF can sync fairly well. The
 % quality of the synchronization may be variable. In the future, a more
-% sophisticated matching algorithm may be required.
+% advanced matching algorithm may be required.
 
 if isempty(user_query_waveform)
     %The MW-VXP option has been selected.
@@ -298,6 +300,10 @@ end
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
 [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase);
 
+%Working with times in seconds and reverting back to original naming.
+tlf_times = tlf_times_shifted/1000;
+clear tlf_times_shifted
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %PROCESSING FOR RP-PLAN CONSTRUCTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -307,12 +313,45 @@ end
 % produced. These "phased-plans" can be imported into Eclipse and a
 % sum-dose computed.
 
-% Basically, the overall process is:
-% - record TLF and waveform, sort TLF data using the waveform, and process
-%   into a format following DICOM standards and accepted by Eclipse.
-% - expos
-% to be further processed.
+%The TLF data of interest is contained within the following structure.
+% for i = 1:size(sorted_phase_arc, 1)
+%     for j = size(sorted_phase_arc, 2)
+%         data_phase_arc.phase(i).arc(j).collrot = 
+%         data_phase_arc.phase(i).arc(j).gantrot =
+%         data_phase_arc.phase(i).arc(j).cp      = 
+%         data_phase_arc.phase(i).arc(j).mu      =
+%         
+%         
+%         
+% data_phase_arc
+% 
+% Phase{phase_number}.ARC_num(counter(phase_number))=ARC_num(i); % Steven Added
+% Phase{phase_number}.Col(counter(phase_number))=Data(i,1); % Steven Added
+% Phase{phase_number}.Control_Point(counter(phase_number))=Data(i,29);
+% Phase{phase_number}.Gantry(counter(phase_number))=Data(i,3);
+% Phase{phase_number}.MU(counter(phase_number))=Data(i,25);
+% %MU_shift=Data(i,21);
+% Phase{phase_number}.MU_shift(counter(phase_number))=MU_shift;
+% %need to re-organize the MLC data to match DICOM format
+% for j=1:60  %  loop through 60 leaf
+%     Phase{phase_number}.MLC{counter(phase_number)}.MLC_A(1,j) = Data(i,33+2*j)*10.;
+%     Phase{phase_number}.MLC{counter(phase_number)}.MLC_B(1,j) = -Data(i,33+120+2*j)*10.;
+% end
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ---MU SHIFT---
 % For each phased plan to be constructed, the MU at each CP must be
 % specified in the form of "CumulativeMetersetWeight" (CMW) as found under
 % "BeamSequence" -> "Item_x" (beam number) -> "ControlPointSequence" -> 
@@ -320,31 +359,107 @@ end
 % the cumulative MU delivered up to and including that CP in that field,
 % divided by the total MU to be delivered in that field.
 
-% The data needs to be reprocessed so that it has a suitable form for
-% writing to the DICOM RP file. Determining the cumulative MU delivered for
-% each field is the first step.
-%To report the max MU difference between snapshots.
-mu_diff_max = [max(diff(mu_e(arc_tlf_indicies{1}))), max(diff(mu_e(arc_tlf_indicies{2})))]
-mu_diff_threshold = max(mu_diff_max) + 0.2; %arbitrarily chosen
-mu_diff_indicies = find(diff(mu_e( sorted_phase_arc{1,1} )) > mu_diff_threshold);
-
-% scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),sz,'r','filled')
-% hold on
-% scatter(tlf_times(sorted_phase_arc{1,1}(mu_diff_indicies)), mu_e(sorted_phase_arc{1,1}(mu_diff_indicies)),15,'b','filled')
-
-for i = 1:length(mu_diff_indicies)
-    
-
-
-
-cumulative_mu = zeros(1, size(sorted_phase_arc, 2));
-
-for i = 1:length(cumulative_mu)
-    for j = 1:size(sorted_phase_arc, 1)
-        mu_e_phase_arc = mu_e(sorted_phase_arc{j,i});
-        cumulative_mu(i) = cumulative_mu(i) + mu_e_phase_arc(end);
+%Creating structure to hold shifted MU data. This structure has the exact
+%same form as the sorted_phase_arc cell array, but as a structure but with
+%one important difference: mu_shift is 'full size' and does not represent a
+%subset.
+%Reference using: mu_shift.phase(i).arc{j}
+for i = 1:size(sorted_phase_arc, 1)
+    %Loop through phases.
+    for j = 1:size(sorted_phase_arc, 2)
+        %Loop through arcs.
+        mu_shift.phase(i).arc{j} = NaN(1, length(arc_tlf_indicies{j}));
     end
 end
+
+%MU difference threshold determined from 1st field.
+mu_diff_max = max(diff(mu_e(arc_tlf_indicies{1})));
+mu_diff_threshold = mu_diff_max + 0.2;
+
+for i = 1:1 %size(sorted_phase_arc, 1)
+    %Loop through phases.
+    for j = 1:1 %size(sorted_phase_arc, 2)
+        %Loop through arcs. The following is confusing. mu_diff_indicies
+        %references indicies in the sorted_phase_arc that contains only a
+        %subset of all tlf indicies, but those sorted_phase_arc indicies
+        %are then used to reference actual data.
+        
+        %Find indicies where the difference between MU for a selected
+        %phase-arc is greater than the MU difference threshold.
+        mu_diff_indicies = find(diff( mu_e(sorted_phase_arc{i,j}) ) > mu_diff_threshold);
+        %mu_diff_indicies_tlf = sorted_phase_arc{i,j}(mu_diff_indicies); %UNUSED. returns indicies that can reference tlf
+        
+        %Adding MU belonging to phase-arc...
+        mu_shift.phase(i).arc{j}(sorted_phase_arc{i,j}) = mu_e(sorted_phase_arc{i,j});
+        
+        %Adding interphase MU...
+        for k = 1:length(mu_diff_indicies)
+            %Loop through indicies referencing MU difference.
+            
+            %Determining MU indicies between MU belonging to a phase.
+            mu_interphase_indicies = sorted_phase_arc{i,j}( mu_diff_indicies(k) ) + 1 ...
+                : sorted_phase_arc{i,j}( mu_diff_indicies(k) + 1 ) - 1;
+            
+            %Setting the interphase MU to the last MU beloning to a phase.
+            mu_shift.phase(i).arc{j}(mu_interphase_indicies) = mu_e( sorted_phase_arc{i,j}( mu_diff_indicies(k) ) );
+            
+        end
+        
+        mu_diff_indicies_n1 = find(diff(mu_shift.phase(1).arc{1}) > mu_diff_threshold);
+        mu_diff_indicies_n2 = mu_diff_indicies_n1 + 1;
+        mu_interphase_diff = cumsum(mu_shift.phase(i).arc{j}(mu_diff_indicies_n2)...
+            - mu_shift.phase(i).arc{j}(mu_diff_indicies_n1)); %note the cumulative sum! [2,2,2] -> [2,4,6]
+        
+        
+        for k = 1:length(mu_interphase_diff)
+            
+            %Indicies to reference what to shift.
+            
+            if k < length(mu_interphase_diff)
+                mu_shift_indicies = mu_diff_indicies_n2(k) : mu_diff_indicies_n1(k+1); 
+            else
+                %Last MU segment.
+                mu_shift_indicies = mu_diff_indicies_n2(k) : arc_tlf_indicies{j}(end);
+            end
+            
+            %Shifting by calculated MU difference.
+            mu_shift.phase(i).arc{j}(mu_shift_indicies) = ...
+                mu_shift.phase(i).arc{j}(mu_shift_indicies) - mu_interphase_diff(k);
+        end
+
+        if j > 1
+            %mu_shift.phase(i).arc{j} = mu_shift.phase(i).arc{j} - arc_tlf_indicies{j}(1);
+        end
+        
+%         %Actual shifting starts here.
+%         for k = 1:length(mu_diff_indicies)
+%             
+%             %Calculating interphase MU difference.
+%             mu_interphase_diff = mu_e( sorted_phase_arc{i,j}( mu_diff_indicies(k) + 1 ) ) - mu_e( sorted_phase_arc{i,j}(mu_diff_indicies(k)) );
+%             
+% 
+%             %Indicies referencing the shift.
+%             if k < length(mu_diff_indicies)
+%                 mu_shift_indicies =  sorted_phase_arc{i,j}( mu_diff_indicies(k) + 1 ) : sorted_phase_arc{i,j}( mu_diff_indicies(k+1) + 1 ) - 1;
+%             else
+%                 %No interphase region.
+%                 mu_shift_indicies =  sorted_phase_arc{i,j}( mu_diff_indicies(k) + 1 ) : sorted_phase_arc{i,j}( mu_diff_indicies(k) );
+%             end
+%                 
+%             %Shifting by calculated MU difference.
+%             mu_shift.phase(i).arc{j}(mu_shift_indicies) = mu_shift.phase(i).arc{j}(mu_shift_indicies) - mu_interphase_diff;
+% 
+%         end
+        
+    end
+end
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+% scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),25,'r','filled')
+% hold on
+% scatter(tlf_times(sorted_phase_arc{1,1}(mu_diff_indicies)), mu_e(sorted_phase_arc{1,1}(mu_diff_indicies)),15,'b','filled')
 
 
 
@@ -361,35 +476,90 @@ end
 %PLOTTING.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tlf_times = tlf_times/1000; %converting ms to s
 
-% figure;
-% plot(rpm_times,beamenable,'b')
+% f1 = figure();
+% figure(f1);
+% sz = 25;
+% scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),sz,'r','filled')
+% title('TLF Times vs. Total MU Delivered During Treatment')
+% xlabel('TLF Times [s]')
+% ylabel('Total MU Delivered')
+% 
 % hold on
-% plot(tlf_times,beamh_e,'r')
-% ylim([-0.5,1.5])
+% scatter(tlf_times(sorted_phase_arc{2,1}), mu_e(sorted_phase_arc{2,1}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,1}), mu_e(sorted_phase_arc{3,1}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,1}), mu_e(sorted_phase_arc{5,1}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,1}), mu_e(sorted_phase_arc{10,1}),sz,'m','filled')
+% 
+% scatter(tlf_times(sorted_phase_arc{1,2}), mu_e(sorted_phase_arc{1,2}),sz,'r','filled')
+% scatter(tlf_times(sorted_phase_arc{2,2}), mu_e(sorted_phase_arc{2,2}),sz,'b','filled')
+% scatter(tlf_times(sorted_phase_arc{3,2}), mu_e(sorted_phase_arc{3,2}),sz,'c','filled')
+% scatter(tlf_times(sorted_phase_arc{5,2}), mu_e(sorted_phase_arc{5,2}),sz,'g','filled')
+% scatter(tlf_times(sorted_phase_arc{10,2}), mu_e(sorted_phase_arc{10,2}),sz,'m','filled')
+
+
+
+
+
+
+
+%FIGURES FOR TONYs REPORT
+% rpm_times = rpm_times/1000;
+
+%Primary figure.
+% f1 = figure();
+% figure(f1);
+% set(gca,'FontSize',13,'fontWeight','bold')
+% plot(rpm_times,beamenable,'b','LineWidth',1.5)
+% hold on
+% plot(tlf_times, beamh_e,'--r','LineWidth',1.5)
+% %xlim([0,200])
+% ylim([-0.1,1.1])
+% xlabel('Time (seconds)')
+% ylabel('Beam On/Off (1 is on)')
+% title('Synchronized Beam On/Off Recordings from TLF and MW DICOM Files for Varian TrueBeam')
 % legend('RPM/MW Recording', 'TLF Recording')
 
+%%% Figure for June 30, film 3.
+% figure();
+% subplot(211)
+% set(gca,'FontSize',13,'fontWeight','bold')
+% plot(rpm_times,beamenable,'b','LineWidth',1.5)
+% hold on
+% plot(tlf_times, beamh_e,'--r','LineWidth',1.5)
+% xlim([0,100])
+% ylim([-0.1,1.1])
+% xlabel('Time (seconds)')
+% ylabel('Beam On/Off (1 is on)')
+% title('Synchronized Beam On/Off Recordings from TLF and MW DICOM Files')
+% legend('RPM/MW Recording', 'TLF Recording')
+% 
+% subplot(223)
+% set(gca,'FontSize',13,'fontWeight','bold')
+% plot(rpm_times,beamenable,'-ob','LineWidth',1.5)
+% hold on
+% plot(tlf_times, beamh_e,'--or','LineWidth',1.5)
+% xlim([23.56,23.68])
+% ylim([-0.1,1.1])
+% xlabel('Time (seconds)')
+% ylabel('Beam On/Off (1 is on)')
+% title('Beam On-to-Off Event')
+% 
+% subplot(224)
+% set(gca,'FontSize',13,'fontWeight','bold')
+% plot(rpm_times,beamenable,'-ob','LineWidth',1.5)
+% hold on
+% plot(tlf_times, beamh_e,'--or','LineWidth',1.5)
+% xlim([29.6, 29.69])
+% ylim([-0.1,1.1])
+% xlabel('Time (seconds)')
+% ylabel('Beam On/Off (1 is on)')
+% title('Beam Off-to-On Event')
+%%%
 
-f1 = figure();
-figure(f1);
-sz = 25;
-scatter(tlf_times(sorted_phase_arc{1,1}), mu_e(sorted_phase_arc{1,1}),sz,'r','filled')
-title('TLF Times vs. Total MU Delivered During Treatment')
-xlabel('TLF Times [s]')
-ylabel('Total MU Delivered')
 
-hold on
-scatter(tlf_times(sorted_phase_arc{2,1}), mu_e(sorted_phase_arc{2,1}),sz,'b','filled')
-scatter(tlf_times(sorted_phase_arc{3,1}), mu_e(sorted_phase_arc{3,1}),sz,'c','filled')
-scatter(tlf_times(sorted_phase_arc{5,1}), mu_e(sorted_phase_arc{5,1}),sz,'g','filled')
-scatter(tlf_times(sorted_phase_arc{10,1}), mu_e(sorted_phase_arc{10,1}),sz,'m','filled')
 
-scatter(tlf_times(sorted_phase_arc{1,2}), mu_e(sorted_phase_arc{1,2}),sz,'r','filled')
-scatter(tlf_times(sorted_phase_arc{2,2}), mu_e(sorted_phase_arc{2,2}),sz,'b','filled')
-scatter(tlf_times(sorted_phase_arc{3,2}), mu_e(sorted_phase_arc{3,2}),sz,'c','filled')
-scatter(tlf_times(sorted_phase_arc{5,2}), mu_e(sorted_phase_arc{5,2}),sz,'g','filled')
-scatter(tlf_times(sorted_phase_arc{10,2}), mu_e(sorted_phase_arc{10,2}),sz,'m','filled')
+
 
 
 % plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_e(subbeam(1).arc(1):subbeam(1).arc(2)))
