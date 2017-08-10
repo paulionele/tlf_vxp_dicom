@@ -1,10 +1,10 @@
-function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_a, subbeam, sorted_phase)
+function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase)
 %Function for seperating arcs. The function works by identifying the number
 %of subbeams and using the control point (CP) information stored with each
 %subbeam, the starting control point. Additionally, the total number of CPs
 %are known. 
 
-% INPUTS: cp_a and subbeam structure from TLF, sorted_phase from
+% INPUTS: cp_e and subbeam structure from TLF, sorted_phase from
 % trajectory_log_phase_sort function (phase sorted TLF 'data'; a list of
 % indicies sorted by phase).
 
@@ -49,36 +49,36 @@ for i = 1:number_subbeams
         if i == 1
             %First beam of beam sequence. ex: [0,0,0,0.0002,...] -> 3 -> 60 ms
             %The beam starts with the final zero CP in the CP sequence.
-            ai = find(cp_a == 0);
+            ai = find(cp_e == 0);
             ai = ai(end);
         else
             %Second or later (except very last) subbeam.
             %The starting subbeam CP is always the one listed for the beam
             %plus 1. EX: 113 listed but actual starting CP is 114.
-            ai = find(cp_a == subbeam(i).cp + 1);
+            ai = find(cp_e == subbeam(i).cp + 1);
             ai = ai(end);
         end
         %Final CP of subbeam i; get from the next subbeam i+1.
-        af = find(cp_a == subbeam(i+1).cp);
+        af = find(cp_e == subbeam(i+1).cp);
         af = af(1); %index of time of final CP in sb. seq. [<113>, 113, 113,...]
     
     else
         %Final subbeam.
         if number_subbeams == 1
             %Only 1 subbeam.
-            ai = find(cp_a == 0);
+            ai = find(cp_e == 0);
             ai = ai(end);
             
-            af = max(cp_a); %max # CP in for entire delivery
-            af = find(cp_a == af); %indicies for max # CP
+            af = max(cp_e); %max # CP in for entire delivery
+            af = find(cp_e == af); %indicies for max # CP
             af = af(1); %index of final CP in final sb. seq. Note the MU tapers so best to take first instance.
         else
             %2 or more subbeams.
-            ai = find(cp_a == subbeam(i).cp + 1);
+            ai = find(cp_e == subbeam(i).cp + 1);
             ai = ai(end);
 
-            af = max(cp_a); %max # CP in for entire delivery
-            af = find(cp_a == af); %indicies for max # CP
+            af = max(cp_e); %max # CP in for entire delivery
+            af = find(cp_e == af); %indicies for max # CP
             af = af(1); %index of final CP in final sb. seq. Note the MU tapers so best to take first instance.
         end
     end

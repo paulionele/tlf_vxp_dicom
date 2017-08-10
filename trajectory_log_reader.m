@@ -295,7 +295,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sorting the TLF file information into 10 different phases.
-[sorted_phase, ~] = phase_sorter(tlf_times_shifted, rpm_times, phase);
+[sorted_phase, ~] = phase_sorter(tlf_times_shifted, rpm_times, phase, 10);
 
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
 [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase);
@@ -477,6 +477,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+%%%%%% Plotting time vs. MU contibution from different phases.
 % f1 = figure();
 % figure(f1);
 % sz = 25;
@@ -503,7 +504,7 @@ end
 
 
 
-%FIGURES FOR TONYs REPORT
+%%%%%% FIGURES FOR TONYs REPORT
 % rpm_times = rpm_times/1000;
 
 %Primary figure.
@@ -556,13 +557,3 @@ end
 % ylabel('Beam On/Off (1 is on)')
 % title('Beam Off-to-On Event')
 %%%
-
-
-
-
-
-
-% plot(tlf_times(subbeam(1).arc(1):subbeam(1).arc(2)), cp_e(subbeam(1).arc(1):subbeam(1).arc(2)))
-% hold on
-% plot(tlf_times(subbeam(2).arc(1):subbeam(2).arc(2)), cp_e(subbeam(2).arc(1):subbeam(2).arc(2)),'-g')
-% plot(tlf_times(intra_arc{1}(1):intra_arc{1}(2)), cp_a(intra_arc{1}(1):intra_arc{1}(2)),'-r')
