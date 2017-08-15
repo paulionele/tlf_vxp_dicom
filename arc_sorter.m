@@ -2,14 +2,14 @@ function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subb
 %Function for seperating arcs. The function works by identifying the number
 %of subbeams and using the control point (CP) information stored with each
 %subbeam, the starting control point. Additionally, the total number of CPs
-%are known. 
+%are known.
 
 % INPUTS: cp_e and subbeam structure from TLF, sorted_phase from
 % trajectory_log_phase_sort function (phase sorted TLF 'data'; a list of
 % indicies sorted by phase).
 
 % OUTPUTS: same structure as sorted_phase, except additional columns may be
-% present if multiple subbeams exist. 
+% present if multiple subbeams exist.
 
 % PART 1 - Identifying the index range for each subbeam.
 %The information is unusual in the sense that the starting CP for any beam
@@ -61,7 +61,7 @@ for i = 1:number_subbeams
         %Final CP of subbeam i; get from the next subbeam i+1.
         af = find(cp_e == subbeam(i+1).cp);
         af = af(1); %index of time of final CP in sb. seq. [<113>, 113, 113,...]
-    
+        
     else
         %Final subbeam.
         if number_subbeams == 1
@@ -76,7 +76,7 @@ for i = 1:number_subbeams
             %2 or more subbeams.
             ai = find(cp_e == subbeam(i).cp + 1);
             ai = ai(end);
-
+            
             af = max(cp_e); %max # CP in for entire delivery
             af = find(cp_e == af); %indicies for max # CP
             af = af(1); %index of final CP in final sb. seq. Note the MU tapers so best to take first instance.
@@ -104,14 +104,14 @@ end
 %Set of indicies for each arc.
 %Used for membership testing in the triple loop below.
 arc_tlf_indicies  = cell(number_subbeams, 1);
-for i = 1:number_subbeams  
+for i = 1:number_subbeams
     %Range of indicies belonging to each arc.
     arc_tlf_indicies{i} = aa{i}(1):aa{i}(2);
 end
 
 %Preallocating with NaN (easy to remove). Col.1 is ARC 1, Col. 2 is ARC 2.
 sorted_phase_arc = cell(10, number_subbeams);
-for i = 1:number_subbeams    
+for i = 1:number_subbeams
     for j = 1:size(sorted_phase_arc, 1)
         sorted_phase_arc{j,i} = NaN(1, length(sorted_phase{j}));
     end
