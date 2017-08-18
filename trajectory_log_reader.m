@@ -337,13 +337,6 @@ clear tlf_times_shifted
 % sum-dose computed.
 
 % ---MU SHIFT---
-% For each phased plan to be constructed, the MU at each CP must be
-% specified in the form of "CumulativeMetersetWeight" (CMW) as found under
-% "BeamSequence" -> "Item_x" (beam number) -> "ControlPointSequence" ->
-% "Item_xxx" (hundred+ CPs) -> "CumulativeMetersetWeight". CMU is equal to
-% the cumulative MU delivered up to and including that CP in that field,
-% divided by the total MU to be delivered in that field.
-
 %MU difference threshold to indicate start/finish of phase. It is
 %determined from the MU of the 1st arc.
 mu_diff_max = max(diff(mu_e(arc_tlf_indicies{1})));
@@ -407,10 +400,34 @@ for i = 1:size(sorted_phase_arc, 1)
         data_phase_arc.phase(i).arc(j).gantrot  = gantrot_e_iec121(sorted_phase_arc{i,j});
         data_phase_arc.phase(i).arc(j).cp       = cp_e(sorted_phase_arc{i,j});
         data_phase_arc.phase(i).arc(j).mush     = mu_shift.phase(i).arc{j};
-        for k = 1:60
-            data_phase_arc.phase(i).arc(j).mlc_ae = mlc.bank_a.leaf(k).e(sorted_phase_arc{i,j});
-            data_phase_arc.phase(i).arc(j).mlc_be = mlc.bank_b.leaf(k).e(sorted_phase_arc{i,j});
-        end %leaves
+        
+        %Preparing empty arrays to hold 60 leaf values for each rec.
+        %         for k = 1:length(sorted_phase_arc{i,j})
+        %             %Loop through recordings.
+        %             data_phase_arc.phase(i).arc(j).mlc_rec(k).leaf_ae = zeros(1,60);
+        %             data_phase_arc.phase(i).arc(j).mlc_rec(k).leaf_be = zeros(1,60);
+        %         end %recordings
+        
+        %Assignment loops.
+        for k = 1:length(sorted_phase_arc{i,j})
+            %Loop through recordings.
+            for m = 1:60
+                %Loop through leaves for each recording. Temp arrays
+                %required for indexing purposes.
+                leaf_temp_a = mlc.bank_a.leaf(m).e(sorted_phase_arc{i,j});
+                leaf_temp_b = mlc.bank_b.leaf(m).e(sorted_phase_arc{i,j});
+                
+                %Assignment of reorganized MLC data. Here we access
+                %individual recordings in the above temp arrays. Note MLC_A
+                %basically refers to the leafs of bank A, and minor details
+                %different that what I would have done.
+                %data_phase_arc.phase(i).arc(j).mlc_rec(k).leaf_ae(m) = leaf_temp_a(k);
+                %data_phase_arc.phase(i).arc(j).mlc_rec(k).leaf_be(m) = leaf_temp_b(k);
+                data_phase_arc.phase(i).arc(j).mlc_rec{k}.MLC_A(m) = leaf_temp_a(k);
+                data_phase_arc.phase(i).arc(j).mlc_rec{k}.MLC_B(m) = leaf_temp_b(k);
+            end %leafs
+        end %recordings
+        
     end %arc
 end %phase
 
@@ -423,20 +440,18 @@ for i = 1:NUMPHASES
     %PhaseARC1{i}.ARC_num=Phase2{i}.ARC_num(ARC1_index);
     PhaseARC1{i}.Control_Point = data_phase_arc.phase(i).arc(1).cp;
     PhaseARC1{i}.Gantry_IEC    = data_phase_arc.phase(i).arc(1).gantrot;
-    PhaseARC1{i}.MLC.MLC_A     = data_phase_arc.phase(i).arc(1).mlc_ae;
-    PhaseARC1{i}.MLC.MLC_B     = data_phase_arc.phase(i).arc(1).mlc_be;
-    PhaseARC1{i}.MU_final      = data_phase_arc.phase(i).arc(1).mush(end);
+    PhaseARC1{i}.MLC           = data_phase_arc.phase(1).arc(1).mlc_rec;
+    PhaseARC1{i}.MU_final      = data_phase_arc.phase(i).arc(1).mush; %MU_final probably refers to the final, shifted/processed MU
     
     if size(sorted_phase_arc, 2) > 1
         %If there exists a second arc.
-
+        
         %PhaseARC2{i}.ARC_num=Phase2{i}.ARC_num(ARC2_index);
         PhaseARC2{i}.Control_Point = data_phase_arc.phase(i).arc(2).cp;
         PhaseARC2{i}.Gantry_IEC    = data_phase_arc.phase(i).arc(2).gantrot;
-        PhaseARC2{i}.MLC.MLC_A     = data_phase_arc.phase(i).arc(2).mlc_ae;
-        PhaseARC2{i}.MLC.MLC_B     = data_phase_arc.phase(i).arc(2).mlc_be;
-        PhaseARC2{i}.MU_final      = data_phase_arc.phase(i).arc(2).mush(end);
-    
+        PhaseARC2{i}.MLC           = data_phase_arc.phase(i).arc(2).mlc_rec;
+        PhaseARC2{i}.MU_final      = data_phase_arc.phase(i).arc(2).mush;
+        
         if size(sorted_phase_arc, 2) == 3
             error('Third arc detected.')
         end
@@ -446,44 +461,26 @@ end
 %Writing out to the pre-existing DICOM files. Most of the code below this
 %line is derived from code by Tony Teke and co-investigators.
 
-%List of items to be modified for field 1 (Item_1), same thing for field 2:
-%RP.FractionGroupSequence(1).Item_1.ReferencedBeamSequence.Item_1.BeamMeterset
-%RP.BeamSequence.Item_1.NumberOfControlPoints
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).ControlPointIndex
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).GantryAngle
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_3.LeafJawPositions ---> IF CP = 1
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.LeafJawPositions ---> IF CP > 1
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.RTBeamLimitingDeviceType
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).GantryRotationDirection = 'CW';
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).CumulativeMetersetWeight
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.CumulativeDoseReferenceCoefficient ---> same as CumulativeMetersetWeight?
-%RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.ReferencedDoseReferenceNumber
-
-
 %Select directory containing DICOM RT plans that were previously exported.
-Directory_name = uigetdir('','Select folder containing DICOM RT plans');
+Directory_name = uigetdir('','Select folder containing DICOM RT plans...');
 dir_struct = dir(Directory_name);
 cd(Directory_name);
-[sorted_names,sorted_index] = sortrows({dir_struct.name}')
+[sorted_names,sorted_index] = sortrows({dir_struct.name}');
 
 counter = 1; %this is an index for enumeration of the DICOM_RTplan_names
-
 for i = 1:length(sorted_names)
     %Loop through files within the selected directory.
     [pathstr,name,ext] = fileparts(sorted_names{i});
     if strcmp(ext,'.dcm')
-        %If file is a DICOM file...
+        %If file is DCM (i.e. not a parent/current dir hardlink).
         DICOM_RTplan_names{counter} = strcat(name,ext);
         counter = counter + 1;
     end
 end
 
-% [FileName_dicom,PathName_dicom] = uigetfile('*.dcm','Select folder containing DICOM RT Plan files for each phase');
-%
-% % before creating DICOM we will create the MLC as a matrix
-% %  TT=horzcat(Phase{1}.MLC{1}.MLC_A,Phase{1}.MLC{1}.MLC_B);
 
-for j = 1:num_phases
+%Main loop for creating unique DICOM plans.
+for j = 1:NUMPHASES
     %Loop through each of the phases, 10 or 20. Within this loop, the two
     %(or more) arcs are processed. Basically, a new 'phased plan' is
     %constructed for each phase using information from the phase and arc
@@ -493,32 +490,28 @@ for j = 1:num_phases
     %Load current plan information into structure named RP. Names are
     %obtained from DICOM_RTplan_names cell array.
     RP = dicominfo(DICOM_RTplan_names{j});
-    %         RP_init=dicominfo('RP.TTQUASAR.2 arcsST4.dcm')
     
-    %I suspect that PhaseARC1_2 is the phase and arc sorted data from the
-    %TLF-MW/VXP/PW. Simple variable rename here then...
-    Phase = PhaseARC1_2;
-    
-    %Testing on phase 0 only for now.
+    %Simple variable rename here.
+    %Phase = PhaseARC1_2; %in TTs code, this was a subsampled structure
+    Phase = PhaseARC1;
     
     %Below, we begin to modify selected parts of the DICOM RP file. These
     %files were previously exported from the planning system. Some things
-    %we don't want to change (i.e. isocenter coordinates already determined
-    %for that phase, etc.???) and other things we need to. Essentially, we
+    %we don't want to change and other things we need to. Essentially, we
     %replace whatever is necessary to make a particular plan a 'phased
     %plan' entirely... which included filling it with information that
     %from the cooresponding respiratory phase.
     
-    %Max value of array(?) MU_final for cooresponding phase and for the 1st
-    %arc. Not sure what MU_final would be an array?
+    %Max MU in the 1st arc, for the jth phase.
     RP.FractionGroupSequence(1).Item_1.ReferencedBeamSequence.Item_1.BeamMeterset = max(Phase{j}.MU_final);
     
     %The number of control points (typically around 180 per field) is set
-    %equal to the length of this array (which I don't know what is) Hmm
-    %why? Also, this will lead to an issue when we merge (bring all 10/20
+    %equal to the number of TLF recordings in that phase-arc. It was just
+    %randomly chosen to be determined from the length of the MU_final
+    %array. Also, this will lead to an issue when we merge (bring all 10/20
     %plans back together in the TPS), since we could easily end up with
     %more than 500 CP per field, which is not allowed. At some point we
-    %will need to downsample, reduce the CP.
+    %will need to downsample, remove the redundent CPs.
     num_control_points = length(Phase{j}.MU_final);
     RP.BeamSequence.Item_1.NumberOfControlPoints = num_control_points;
     
@@ -526,13 +519,11 @@ for j = 1:num_phases
         %Loop through all the CPs. Items within the ControlPointSequence are
         %enumerated starting with 1; the names are variable with 'Item_'.
         
-        %Specifying some preliminary things. First, the CP index within each
-        %item counts from 0. Second thing is the gantry rotation angle in
-        %IEC scale.
+        %Attributes independent of the CP number.
         RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)])...
-            .ControlPointIndex = i - 1;
+            .ControlPointIndex = i - 1; %CP index starts at zero!
         RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)])...
-            .GantryAngle = Phase{j}.Gantry_IEC(i);
+            .GantryAngle = Phase{j}.Gantry_IEC(i); %single value assignment
         
         if i == 1
             %If first CP in ControlPointSequence, we will do *this*.
@@ -578,11 +569,11 @@ for j = 1:num_phases
         RP.BeamSequence.Item_1.ControlPointSequence.(['Item_' num2str(i)])...
             .ReferencedDoseReferenceSequence.Item_1.ReferencedDoseReferenceNumber = 1;
         
-    end
+    end %CP loop arc 1
     
+    %Exactly the same as above, just for the second arc.
+    Phase = PhaseARC2;
     
-    Phase = PhaseARC2_2;
-    %Testing on phase 0 only for now
     RP.FractionGroupSequence(1).Item_1.ReferencedBeamSequence.Item_2.BeamMeterset=max(Phase{j}.MU_final);
     num_control_points=length(Phase{j}.MU_final);
     RP.BeamSequence.Item_2.NumberOfControlPoints=num_control_points;
@@ -601,13 +592,38 @@ for j = 1:num_phases
             Phase{j}.MU_final(i)/max(Phase{j}.MU_final);
         RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.ReferencedDoseReferenceNumber=1;
         
-    end
-    %     dicom_output=['STAR5.dcm'];
-    %     dicomwrite(1,dicom_output,RP,'CreateMode', 'copy');
+    end %CP loop arc 2
+    
+    
     dicom_output=['TT_' DICOM_RTplan_names{j}];
     dicomwrite(1,dicom_output,RP,'CreateMode', 'copy');
     
-end
+    fprintf('Phase %2.0f complete.\n', j - 1)
+    
+end %phases loop
+clc
+disp('PROCESSING COMPLETE!')
+
+
+
+%LOG FILE.
+% log1 = fopen('RP_LOG.txt','w');
+% fprintf(log1,'%6s %12s\n','x','exp(x)');
+% fprintf(log1,'%6.2f %12.8f\n',A);
+% fclose(log1);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
