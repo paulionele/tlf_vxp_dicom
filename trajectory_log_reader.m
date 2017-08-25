@@ -99,8 +99,9 @@ while 1
         break
     end
 end
+
 axis_data(1,13,:) = 0; %set initial MU to zero.
-axis_data(1,15,:) = 0; %set initial CP to zero.
+axis_data(1,15,:) = 0; %set initial CP to zero (req. in arc_sorter func.)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SCALE TRANFORMATIONS.
@@ -115,83 +116,83 @@ tlf_times = tlf_times(1:end - rc); %tlf truncated
 
 %Collimator Rotation
 collrot_e = axis_data(:,1,1)';
-collrot_a = axis_data(:,1,2)';
+%collrot_a = axis_data(:,1,2)';
 
 collrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_e);
-collrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_a);
-clear collrot_e collrot_a
+%collrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), collrot_a);
+clear collrot_e %collrot_a 
 
 %Gantry Rotation
 gantrot_e = axis_data(:,2,1)';
-gantrot_a = axis_data(:,2,2)';
+%gantrot_a = axis_data(:,2,2)';
 
 gantrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_e);
-gantrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_a);
-clear gantrot_e gantrot_a
+%gantrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), gantrot_a);
+clear gantrot_e %gantrot_a
 
 %Y1
 y1_e = axis_data(:,3,1)';
-y1_a = axis_data(:,3,2)';
+%y1_a = axis_data(:,3,2)';
 
 y1_e_iec121 = arrayfun( @(x) - x, y1_e);
-y1_a_iec121 = arrayfun( @(x) - x, y1_a);
-clear y1_e y1_a
+%y1_a_iec121 = arrayfun( @(x) - x, y1_a);
+clear y1_e %y1_a
 
 %Y2
 y2_e = axis_data(:,4,1)';
-y2_a = axis_data(:,4,2)';
+%y2_a = axis_data(:,4,2)';
 
 y2_e_iec121 = y2_e;
-y2_a_iec121 = y2_a;
-clear y2_e y2_a
+%y2_a_iec121 = y2_a;
+clear y2_e %y2_a
 
 %X1
 x1_e = axis_data(:,5,1)';
-x1_a = axis_data(:,5,2)';
+%x1_a = axis_data(:,5,2)';
 
 x1_e_iec121 = arrayfun( @(x) - x, x1_e);
-x1_a_iec121 = arrayfun( @(x) - x, x1_a);
-clear x1_e x1_a
+%x1_a_iec121 = arrayfun( @(x) - x, x1_a);
+clear x1_e %x1_a
 
 %X2
 x2_e = axis_data(:,6,1)';
-x2_a = axis_data(:,6,2)';
+%x2_a = axis_data(:,6,2)';
 
 x2_e_iec121 = x2_e;
-x2_a_iec121 = x2_a;
-clear x2_e x2_a
+%x2_a_iec121 = x2_a;
+clear x2_e %x2_a
 
 %Couch Vrt
 couchvrt_e = axis_data(:,7,1)';
-couchvrt_a = axis_data(:,7,2)';
+%couchvrt_a = axis_data(:,7,2)';
 
 couchvrt_e_iec121 = arrayfun( @(x) -(x - 100), couchvrt_e);
-couchvrt_a_iec121 = arrayfun( @(x) -(x - 100), couchvrt_a);
-clear couchvrt_e couchvrt_a
+%couchvrt_a_iec121 = arrayfun( @(x) -(x - 100), couchvrt_a);
+clear couchvrt_e %couchvrt_a
 
 %Couch Lng
 couchlng_e = axis_data(:,8,1)';
-couchlng_a = axis_data(:,8,2)';
+%couchlng_a = axis_data(:,8,2)';
 
 couchlng_e_iec121 = couchlng_e;
-couchlng_a_iec121 = couchlng_a;
-clear couchlng_e couchlng_a
+%couchlng_a_iec121 = couchlng_a;
+clear couchlng_e %couchlng_a
 
 %Couch Lat
 couchlat_e = axis_data(:,9,1)';
-couchlat_a = axis_data(:,9,2)';
+%couchlat_a = axis_data(:,9,2)';
 
 couchlat_e_iec121 = arrayfun( @(x) x - 100, couchlat_e);
-couchlat_a_iec121 = arrayfun( @(x) x - 100, couchlat_a);
-clear couchlat_e couchlat_a
+%couchlat_a_iec121 = arrayfun( @(x) x - 100, couchlat_a);
+clear couchlat_e %couchlat_a
 
 %Couch Rtn
 couchrot_e = axis_data(:,10,1)';
-couchrot_a = axis_data(:,10,2)';
+%couchrot_a = axis_data(:,10,2)';
 
 couchrot_e_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_e);
-couchrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_a);
-clear couchrot_e couchrot_a
+%couchrot_a_iec121 = arrayfun( @(x) mod(180 - x, 360), couchrot_a);
+clear couchrot_e %couchrot_a
 
 %Couch Pit
 %Unused! Couch does not support this function.
@@ -206,26 +207,26 @@ clear couchrot_e couchrot_a
 
 %Monitor Units
 mu_e = axis_data(:,13,1)';
-mu_a = axis_data(:,13,2)';
+%mu_a = axis_data(:,13,2)';
 
 %Beam Hold
 %When integer value is 2, the beam is held.
 %Bits are flipped b/c want beam on as integer value 1; not() op. gives
 %logical array.
 beamh_e = not( axis_data(:,14,1)' / 2 );
-beamh_a = not( axis_data(:,14,2)' / 2 );
+%beamh_a = not( axis_data(:,14,2)' / 2 );
 
 %Control Pt
 cp_e = axis_data(:,15,1)';
-cp_a = axis_data(:,15,2)';
+%cp_a = axis_data(:,15,2)';
 
 %Carriage A Positions
 cara_e = axis_data(:,16,1)';
-cara_a = axis_data(:,16,2)';
+%cara_a = axis_data(:,16,2)';
 
 %Carriage B Positions
 carb_e = axis_data(:,17,1)';
-carb_a = axis_data(:,17,2)';
+%carb_a = axis_data(:,17,2)';
 
 %MLC Leaves (initial prep for DICOM format)
 for i = 1:60
@@ -292,7 +293,7 @@ if isempty(user_query_waveform)
 else
     %Call for waveform generator function.
     period = input('Enter a period in seconds or hit ENTER key for default (4s): ');
-    [rpm_times, phase] = waveform_generator(period);
+    [rpm_times, phase] = waveform_generator(period, NUMPHASES);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -308,8 +309,9 @@ if isempty(user_query_waveform)
     %The MW-VXP option has been selected.
     tlf_times_shifted = tlf_times + 4700; %yup, that's it.
 else
-    %Copy and rename so sorting functions work.
-    %tlf_times will be used for plotting purposes from now on.
+    %No shift is applied but the variable name is copied so the sorting
+    %functions get the correct arguments. tlf_times_shifted is deleted
+    %after the sorting functions.
     tlf_times_shifted = tlf_times;
 end
 
@@ -318,7 +320,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sorting the TLF file information into 10 different phases.
-[sorted_phase] = phase_sorter(tlf_times_shifted, rpm_times, phase, NUMPHASES);
+[sorted_phase] = phase_sorter(tlf_times_shifted, rpm_times, phase, NUMPHASES, user_query_waveform);
 
 %Sorting the 10 different phases into n (1, 2, or 3) arcs.
 [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase);
@@ -347,12 +349,14 @@ for i = 1:size(sorted_phase_arc, 1)
     for j = 1:size(sorted_phase_arc, 2)
         %Loop through arcs.
         
-        %Find indicies where the difference between MU for a selected
-        %phase-arc is greater than the MU difference threshold.
-        mu_diff_indicies = find(diff( mu_e(sorted_phase_arc{i,j}) ) > mu_diff_threshold);
-        
         %The unshifted MU for a phase-arc are added to the mu_shift struct.
         mu_shift.phase(i).arc{j} = mu_e(sorted_phase_arc{i,j});
+        mu_no_shift.phase(i).arc{j} = mu_e(sorted_phase_arc{i,j});
+        
+        %Shifting arcs of any phase by initial MU of that arc. Otherwise
+        %each succesive phase starts with a slightly higher MU (expected
+        %behavior based on sorting design, MU from TLF is cumulative).
+        mu_shift.phase(i).arc{j} = mu_shift.phase(i).arc{j} - mu_shift.phase(i).arc{j}(1);
         
         %Determining indicies where MU difference exceeds threshold (_n1).
         %The second array (_n2) shifts those indicies by one. Utilizing
@@ -375,18 +379,9 @@ for i = 1:size(sorted_phase_arc, 1)
             %Shifting by calculated MU difference.
             mu_shift.phase(i).arc{j}(mu_shift_indicies) = ...
                 mu_shift.phase(i).arc{j}(mu_shift_indicies) - mu_interphase_diff(k);
-            
-            if j > 1
-                %MU from TLF is cumulative (2nd arc does not start at zero).
-                %Shift entire MU array by initial MU listed for that arc.
-                mu_shift.phase(i).arc{j} = mu_shift.phase(i).arc{j} - mu_shift.phase(i).arc{j}(1);
-            end
-        end %MU interphase loop
+
+        end %MU shift interphase loop        
     end %arcs
-    %Shifting first arc of any phase by initial MU of that arc. Otherwise
-    %each succesive phase starts with a slightly higher MU (expected
-    %behavior based on sorting design).
-    mu_shift.phase(i).arc{1} = mu_shift.phase(i).arc{1} - mu_shift.phase(i).arc{1}(1);
 end %phases
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -408,7 +403,8 @@ for i = 1:size(sorted_phase_arc, 1)
         %             data_phase_arc.phase(i).arc(j).mlc_rec(k).leaf_be = zeros(1,60);
         %         end %recordings
         
-        %Assignment loops.
+        %Assignment loops for leaves to get the right data structure to
+        %match the DICOM-writing code.
         for k = 1:length(sorted_phase_arc{i,j})
             %Loop through recordings.
             for m = 1:60

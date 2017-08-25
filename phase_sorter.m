@@ -1,4 +1,4 @@
-function [sorted_phase] = phase_sorter(tlf_times, rpm_times, phase, num_phases)
+function [sorted_phase] = phase_sorter(tlf_times, rpm_times, phase, num_phases, user_query_waveform)
 %Function for phase sorting TLF data into 10 (or 20 phases, code would need
 %to be re-written for that though) phases, based on phase information from
 %the VXP or MW file.
@@ -31,32 +31,78 @@ function [sorted_phase] = phase_sorter(tlf_times, rpm_times, phase, num_phases)
 % change.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PART 1.
+% PART 1. - Converting continuous phase value to integer representation.
 
-%Interpolated phase values, based on TLF times.
-phase_tlf = interp1(rpm_times, phase, tlf_times);
-phase_tlf(isnan(phase_tlf)) = []; %removing NaN entries
-length_tlf = length(phase_tlf); %number of snapshots/recordings
-
-%Defining n equally spaced phases on 0 to 2*pi.
-aa = linspace(0, 2*pi, num_phases + 1);
-
-%A preallocated array storing phase values for each index (tlf_time).
-phase_array = zeros(1,length_tlf);
-
-%The for-loop below assigns each continuous phase value on [0,2*pi) an
-%integer on [0,n-1]. Logical indexing is used below. Testing is performed
-%by relational operators, then the logical arrays returned are compared by
-%logical AND. Note, the short AND (&&) does not work for whatever reason
-%because "&& operator must be convertible to scalar values". In any case,
-%logical indexing is used to reference the entire phase_array and set the
-%referenced values to the appropriate values.
-for i = 1:num_phases
-    phase_array( (phase_tlf >= aa(i)) & (phase_tlf < aa(i+1)) ) = i-1;
+if isempty(user_query_waveform)
+    %MW-VXP waveform source has been selected.
+    %Interpolated phase values, based on TLF times.
+    phase_tlf = interp1(rpm_times, phase, tlf_times);
+    phase_tlf(isnan(phase_tlf)) = []; %removing NaN entries
+    length_tlf = length(phase_tlf); %number of snapshots/recordings
+    
+    %Defining n equally spaced phases on 0 to 2*pi.
+    aa = linspace(0, 2*pi, num_phases + 1);
+    
+    %A preallocated array storing phase values for each index (tlf_time).
+    phase_array = zeros(1,length_tlf);
+    
+    %The for-loop below assigns each continuous phase value on [0,2*pi) an
+    %integer on [0,n-1]. Logical indexing is used below. Testing is performed
+    %by relational operators, then the logical arrays returned are compared by
+    %logical AND. Note, the short AND (&&) does not work for whatever reason
+    %because "&& operator must be convertible to scalar values". In any case,
+    %logical indexing is used to reference the entire phase_array and set the
+    %referenced values to the appropriate values.
+    
+    %OPTION 1 - Does not work well with preprogrammed waveform.
+    for i = 1:num_phases
+        phase_array( (phase_tlf >= aa(i)) & (phase_tlf < aa(i+1)) ) = i-1;
+    end
+    
+    %OPTION 2 - Does not work well with preprogrammed waveform.
+    %     rr = 0;
+    %     for i = 1:length_tlf
+    %
+    %         if length( find(phase_tlf(i) == aa) ) == 1
+    %             %The phase value recorded exactly matches a phase val used for
+    %             %testing.
+    %             rr = rr+1;
+    %         end
+    %
+    %         if (phase_tlf(i) >= aa(1)) && (phase_tlf(i) < aa(2))
+    %             phase_array(i) = 0;
+    %         elseif (phase_tlf(i) >= aa(2)) && (phase_tlf(i) < aa(3))
+    %             phase_array(i) = 1;
+    %         elseif (phase_tlf(i) >= aa(3)) && (phase_tlf(i) < aa(4))
+    %             phase_array(i) = 2;
+    %         elseif (phase_tlf(i) >= aa(4)) && (phase_tlf(i) < aa(5))
+    %             phase_array(i) = 3;
+    %         elseif (phase_tlf(i) >= aa(5)) && (phase_tlf(i) < aa(6))
+    %             phase_array(i) = 4;
+    %         elseif (phase_tlf(i) >= aa(6)) && (phase_tlf(i) < aa(7))
+    %             phase_array(i) = 5;
+    %         elseif (phase_tlf(i) >= aa(7)) && (phase_tlf(i) < aa(8))
+    %             phase_array(i) = 6;
+    %         elseif (phase_tlf(i) >= aa(8)) && (phase_tlf(i) < aa(9))
+    %             phase_array(i) = 7;
+    %         elseif (phase_tlf(i) >= aa(9)) && (phase_tlf(i) < aa(10))
+    %             phase_array(i) = 8;
+    %         else
+    %             phase_array(i) = 9;
+    %         end
+    %     end
+    
+else
+    %Waveform has been automatically generated so no conversion of
+    %continuous phase values to their discrete representations is
+    %necessary.
+    length_tlf = length(tlf_times);
+    phase_array = phase(1:length_tlf); %only a portion is required
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% PART 2.
+% PART 2. - Sorting recordings (represented as indicies) by their
+% associated phase value. In addition, whenever there is a phase change, a
+% specific process is carried out.
 
 %Due to different sampling rates between the TLF and MW/VXP file, the
 %interp1 function returns some phase values that 'wrap' from 2*pi to 0;
@@ -73,9 +119,15 @@ for jmode = ceil(mode_window/2):length_tlf-ceil(mode_window/2)
 end
 % End function by Steven Thomas.
 
-%Below, the phase_tlf2 array (a processed version of phase_array) is sorted
-%into n different arrays, cooresponding to n different phases.
-x = ones(1,num_phases); %used to maintain indicies to ref sorted_phase subarrays
+%Below in the while loop, the phase_tlf2 array (a processed version of
+%phase_array) is sorted into n different arrays, cooresponding to n
+%different phases.
+
+%Building the sorted_phase cell array and preallocating n subarrays to fill
+%with the phase sorted indicies. Regarding the 'x' array, basically,
+%entries in this array represent the indicies to reference in the
+%sorted_phase array and this is all part of preallocation.
+x = ones(1,num_phases);
 sorted_phase = cell(num_phases,1);
 for i = 1:num_phases
     sorted_phase{i} = NaN(1,length(phase_array));
@@ -84,30 +136,39 @@ end
 i = 1; %increment for while loop
 entries_added = 0;
 while i < length_tlf
-    %Loop through entire TLF, expect for last (ref outside array dim).
+    %Loop through entire TLF, expect for last (ref outside array dim). A
+    %while-loop is used instead of a for-loop because the loop variable
+    %needs to be modified (cannot do this with for-loop).
     for j = 1:num_phases
         %Loop through numerical representation of phase (ex: 0 to 9).
         if phase_tlf2(i) == (j-1)
             %If match to current recorded phase.
             
-            if (phase_tlf2(i+1) == (j-2) || phase_tlf2(i+1) == (j))
+            
+            
+            if ( phase_tlf2(i+1)==(j-2) || phase_tlf2(i+1)==j ) || ...
+                    ( phase_tlf2(i)==(num_phases-1) && phase_tlf2(i+1)==0 )
                 %Special case here. Add current recording to current phase
                 %AND add next recording to current and next phase. New rec
                 %could be either a 'higher' or 'lower' phase hence we have
-                %j-2 for one less than j-1 and j as one more.
+                %j-2 for one less than j-1 and j as one more. Or, there
+                %could be a change from the last phase n -> phase 0.
                 
-                %Add the current recording.
+                %Add the current recording and increment counter.
                 sorted_phase{j}(x(j)) = i;
                 x(j) = x(j) + 1;
                 
-                %Add the next recording to the current phase.
+                %Add the next recording to the current phase and inc. cntr.
                 sorted_phase{j}(x(j)) = i+1;
                 x(j) = x(j) + 1;
                 
-                %Add the next recording to the next phase.
-                %phase_tlf2 returns 0 to 9 but need to increment
-                %for index use.
-                q = phase_tlf2(i+1) + 1; %easy to see index
+                %Add the next recording to the next phase and inc. cntr.
+                %phase_tlf2 has values 0 to 9 but need to increment these
+                %for index use. Using (i+1) returns the phase of the next
+                %recording and +1 because we index starting from 1 (not
+                %from 0). So, q is equal to the value of the next phase as
+                %represented from 1 to 10 (not 0 to 9).
+                q = phase_tlf2(i+1) + 1;
                 sorted_phase{q}(x(q)) = i+1;
                 x(q) = x(q) + 1;
                 
@@ -117,13 +178,14 @@ while i < length_tlf
                 entries_added = entries_added + 1;
                 break
             else
-                %If test returns true, then add the index
-                %cooresponding to the phase entry that tested true,
-                %to the array cooresponding to that phase.
+                %Add the index to the matching phase.
                 sorted_phase{j}(x(j)) = i;
                 x(j) = x(j) + 1;
                 break
-            end %special test
+            end %special test (entering new phase)
+            
+            
+            
         end %phase test
     end %phase loop
     i = i+1;

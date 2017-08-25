@@ -1,8 +1,7 @@
 function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subbeam, sorted_phase)
 %Function for seperating arcs. The function works by identifying the number
 %of subbeams and using the control point (CP) information stored with each
-%subbeam, the starting control point. Additionally, the total number of CPs
-%are known.
+%subbeam, the starting control point.
 
 % INPUTS: cp_e and subbeam structure from TLF, sorted_phase from
 % trajectory_log_phase_sort function (phase sorted TLF 'data'; a list of
@@ -27,11 +26,12 @@ function [sorted_phase_arc, intra_arc, arc_tlf_indicies] = arc_sorter(cp_e, subb
 %and arc 2. The cell array aa contains the absolute index range for each
 %subbeam. From a previous function, this current function receives a
 %phase-sorted array of indicies (tlf indicies, number of indicies = number
-%of 20ms snapshots); an array for each phase. We now pass through each of
-%the 10 phases, and for a given phase, test membership of an index to the
-%index range for each arc as determined in PART 1. Returned is a cell array
-%sorted_phase_arc that maintains the sorted phase_phase structure, but now
-%has n cols for the n arcs delivered.
+%of 20ms snapshots + some additional duplicate snapshots whenever there is
+%a change of phase); an array for each phase. We now pass through each of
+%the 10/20 phases, and for a given phase, test membership of an index to
+%the index range for each arc as determined in PART 1. Returned is a cell
+%array sorted_phase_arc that maintains the sorted phase_phase structure,
+%but now has n cols for the n arcs delivered.
 
 number_subbeams  = length(subbeam); %1, 2, or 3 subbeams usually
 aa = cell(number_subbeams, 1); %array to store index data for subbeams
@@ -81,9 +81,10 @@ for i = 1:number_subbeams
             af = find(cp_e == af); %indicies for max # CP
             af = af(1); %index of final CP in final sb. seq. Note the MU tapers so best to take first instance.
         end
-    end
+        
+    end %subbeam number test
     aa{i} = [ai, af];
-end
+end %subbeam loop
 
 for i = 1:number_intra_arc
     %Will run once for 2 subbeams.
