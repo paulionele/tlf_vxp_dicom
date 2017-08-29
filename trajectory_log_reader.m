@@ -5,12 +5,15 @@
 %%
 % This is the primary script for reading TLF binary files, performing scale
 % transformations, processing TLF data (phase sorting, then arc sorting
-% machine axis data), and plotting.
+% machine axis data), MU shifting, DICOM RP writing, and plotting.
 %%
-
 clear;clc
 
 NUMPHASES = 10;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% READING TLF
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Integers and floats are stored in 'little endian' format.
 %ens = 'ieee-le'; %order for numerical interpretation of byte sequence
@@ -20,44 +23,39 @@ pathname  = fullfile(pwd,directory,filesep);
 
 try
     [filename,pathname] = uigetfile([pathname,'*.bin'],'Select the TLF Binary File');
-    filepath = fullfile(pathname, filename);
-    fid1 = fopen(filepath,'rb');
+    fid_tlf = fopen(fullfile(pathname, filename),'rb');
 catch exception
     %Can add exceptions here later.
     disp(exception.identifier)
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% READING TLF
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-disp('Processing the TLF binary file...')
+disp('Reading and preliminary processing of the TLF binary file...')
 
 %Header.
-header.signiture   = fread(fid1, 16, 'char=>char')'; %*char is shorthand
-header.version     = fread(fid1, 16, '*char')';
-header.hsize       = fread(fid1, 1, '*int')';
-header.sampling    = fread(fid1, 1, '*int')';
-header.num_axes    = fread(fid1, 1, '*int')';
+header.signiture   = fread(fid_tlf, 16, 'char=>char')'; %*char is shorthand
+header.version     = fread(fid_tlf, 16, '*char')';
+header.hsize       = fread(fid_tlf, 1, '*int')';
+header.sampling    = fread(fid_tlf, 1, '*int')';
+header.num_axes    = fread(fid_tlf, 1, '*int')';
 
 %Machine parameters/axis added to header.
-header.axes_enumeration = fread(fid1, header.num_axes, '*int');
-header.axes_sampling    = fread(fid1, header.num_axes, '*int');
-header.axis_scale       = fread(fid1, 1, '*int');
-header.num_sbeams       = fread(fid1, 1, '*int');
-header.truncation       = fread(fid1, 1, '*int');
-header.num_snaps        = fread(fid1, 1, '*int');
-header.mlc_model        = fread(fid1, 1, '*int');
-header.reserved1        = fread(fid1, 1024 - (64+header.num_axes*8));
+header.axes_enumeration = fread(fid_tlf, header.num_axes, '*int');
+header.axes_sampling    = fread(fid_tlf, header.num_axes, '*int');
+header.axis_scale       = fread(fid_tlf, 1, '*int');
+header.num_sbeams       = fread(fid_tlf, 1, '*int');
+header.truncation       = fread(fid_tlf, 1, '*int');
+header.num_snaps        = fread(fid_tlf, 1, '*int');
+header.mlc_model        = fread(fid_tlf, 1, '*int');
+header.reserved1        = fread(fid_tlf, 1024 - (64+header.num_axes*8));
 
 %%%Subbeams.
 for i = 1:header.num_sbeams
-    subbeam(i).cp         = fread(fid1, 1, '*int');
-    subbeam(i).mu         = fread(fid1, 1, '*float');
-    subbeam(i).rad_time   = fread(fid1, 1, '*float');
-    subbeam(i).sbeam_seq  = fread(fid1, 1, '*int');
-    subbeam(i).sbeam_name = fread(fid1, 512, '*char')';
-    subbeam(i).reserved2  = fread(fid1, 32, '*char')';
+    subbeam(i).cp         = fread(fid_tlf, 1, '*int');
+    subbeam(i).mu         = fread(fid_tlf, 1, '*float');
+    subbeam(i).rad_time   = fread(fid_tlf, 1, '*float');
+    subbeam(i).sbeam_seq  = fread(fid_tlf, 1, '*int');
+    subbeam(i).sbeam_name = fread(fid_tlf, 512, '*char')';
+    subbeam(i).reserved2  = fread(fid_tlf, 32, '*char')';
 end
 
 total_samples = sum(header.axes_sampling); %parameters per snapshot
@@ -79,11 +77,11 @@ axis_data = zeros(header.num_snaps, total_samples, 2);
 for i = 1:header.num_snaps  %snapshot every 20 ms
     for j = 1:total_samples %parameters per snapshot
         for k = 1:2         %expected (1) and actual (2) values
-            axis_data(i,j,k) = fread(fid1, 1, '*float');
+            axis_data(i,j,k) = fread(fid_tlf, 1, '*float');
         end
     end
 end
-fclose(fid1);
+fclose(fid_tlf);
 
 %Removing recordings from TLF; based on initial beam hold. While the beam
 %is initially held, those recordings (all cooresponding axis/parameters)
@@ -107,7 +105,8 @@ axis_data(1,15,:) = 0; %set initial CP to zero (req. in arc_sorter func.)
 %SCALE TRANFORMATIONS.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %We will proceed with using the expected values "_e", since that is what is
-%used in Tony's code.
+%used in Tony's code. Some variables may be commented and/or cleared to
+%free up the workspace.
 
 %First snap is at 0 ms (?), and each preceeding snap is at 20*n ms; where n
 %is the snap number. So an array of times:
@@ -384,10 +383,7 @@ for i = 1:size(sorted_phase_arc, 1)
     end %arcs
 end %phases
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%WRITING OUT DICOM RT PLANS (10 or 20)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% ---RESTRUCTURING FOR DICOM WRITING---
 %The TLF data of interest is contained within the following structure.
 for i = 1:size(sorted_phase_arc, 1)
     for j = 1:size(sorted_phase_arc, 2)
@@ -430,13 +426,12 @@ end %phase
 %In order to utilize the DICOM RP writing code created by other
 %investigators, I've created some additional structures copying the design
 %and naming conventions used in that DICOM-writing code.
-
 for i = 1:NUMPHASES
     
     %PhaseARC1{i}.ARC_num=Phase2{i}.ARC_num(ARC1_index);
     PhaseARC1{i}.Control_Point = data_phase_arc.phase(i).arc(1).cp;
     PhaseARC1{i}.Gantry_IEC    = data_phase_arc.phase(i).arc(1).gantrot;
-    PhaseARC1{i}.MLC           = data_phase_arc.phase(1).arc(1).mlc_rec;
+    PhaseARC1{i}.MLC           = data_phase_arc.phase(i).arc(1).mlc_rec;
     PhaseARC1{i}.MU_final      = data_phase_arc.phase(i).arc(1).mush; %MU_final probably refers to the final, shifted/processed MU
     
     if size(sorted_phase_arc, 2) > 1
@@ -453,6 +448,10 @@ for i = 1:NUMPHASES
         end
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%WRITING OUT DICOM RT PLANS (10 or 20)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Writing out to the pre-existing DICOM files. Most of the code below this
 %line is derived from code by Tony Teke and co-investigators.
@@ -473,7 +472,6 @@ for i = 1:length(sorted_names)
         counter = counter + 1;
     end
 end
-
 
 %Main loop for creating unique DICOM plans.
 for j = 1:NUMPHASES

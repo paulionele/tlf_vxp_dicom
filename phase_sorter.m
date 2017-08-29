@@ -59,39 +59,6 @@ if isempty(user_query_waveform)
         phase_array( (phase_tlf >= aa(i)) & (phase_tlf < aa(i+1)) ) = i-1;
     end
     
-    %OPTION 2 - Does not work well with preprogrammed waveform.
-    %     rr = 0;
-    %     for i = 1:length_tlf
-    %
-    %         if length( find(phase_tlf(i) == aa) ) == 1
-    %             %The phase value recorded exactly matches a phase val used for
-    %             %testing.
-    %             rr = rr+1;
-    %         end
-    %
-    %         if (phase_tlf(i) >= aa(1)) && (phase_tlf(i) < aa(2))
-    %             phase_array(i) = 0;
-    %         elseif (phase_tlf(i) >= aa(2)) && (phase_tlf(i) < aa(3))
-    %             phase_array(i) = 1;
-    %         elseif (phase_tlf(i) >= aa(3)) && (phase_tlf(i) < aa(4))
-    %             phase_array(i) = 2;
-    %         elseif (phase_tlf(i) >= aa(4)) && (phase_tlf(i) < aa(5))
-    %             phase_array(i) = 3;
-    %         elseif (phase_tlf(i) >= aa(5)) && (phase_tlf(i) < aa(6))
-    %             phase_array(i) = 4;
-    %         elseif (phase_tlf(i) >= aa(6)) && (phase_tlf(i) < aa(7))
-    %             phase_array(i) = 5;
-    %         elseif (phase_tlf(i) >= aa(7)) && (phase_tlf(i) < aa(8))
-    %             phase_array(i) = 6;
-    %         elseif (phase_tlf(i) >= aa(8)) && (phase_tlf(i) < aa(9))
-    %             phase_array(i) = 7;
-    %         elseif (phase_tlf(i) >= aa(9)) && (phase_tlf(i) < aa(10))
-    %             phase_array(i) = 8;
-    %         else
-    %             phase_array(i) = 9;
-    %         end
-    %     end
-    
 else
     %Waveform has been automatically generated so no conversion of
     %continuous phase values to their discrete representations is
