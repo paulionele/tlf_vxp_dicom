@@ -49,7 +49,6 @@ while pp < period_repetition+1
     pp = pp+1;
 end
 
-
 %Produces continuous wrapped-phase.
 % theta = 2*pi*rpm_times/(period*1000); %working in ms
 % phase = mod(theta - 2*pi, 2*pi); %returned phases on [0,2*pi)

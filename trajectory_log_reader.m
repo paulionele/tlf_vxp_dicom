@@ -30,6 +30,7 @@ catch exception
 end
 
 disp('Reading and preliminary processing of the TLF binary file...')
+disp(filename)
 
 %Header.
 header.signiture   = fread(fid_tlf, 16, 'char=>char')'; %*char is shorthand
@@ -239,6 +240,76 @@ for i = 1:60
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%MU and GR ADJUSTMENTS.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%MU and corrections will only work for 'point perturbations', that is it
+%has only been foreseen that there is no consecutive decrease of MU beyond
+%the first instance. It has not been studied how the code performs if this
+%is the case. The following cannot be considered robust for all recordings.
+%GR adjustments assume 1 or 2 partial arcs, the 1st arc CW and 2nd CCW.
+
+%Find where the MU and CP decreases.
+eti_mu = find(diff(mu_e)<0);
+%eti_cp = find(diff(cp_e)<0);
+
+for i = 1:length(eti_mu)
+    ta1 = find(mu_e > mu_e(eti_mu(i))); %scan for next MU greater than referenced MU
+    mu_e(eti_mu(i)+1 : ta1(1)-1) = mu_e(eti_mu(i)); %set the MU in the defined index range to the initial MU before decrease
+end
+    
+% for i = 1:length(eti_cp)
+%     ta1 = find(cp_e > cp_e(eti_cp(i)));
+%     cp_e(eti_cp(i)+1 : ta1(1)-1) = cp_e(eti_cp(i));
+% end
+
+% %For the following, we assume that any first arc 
+% intra_arc = arc_identifier(cp_e, subbeam); %range of indicies between arcs
+% 
+% for j = 1:length(intra_arc)+1
+%     if j == 1
+%         %Arc 1 CW, between 0 and 180.
+%         
+%     elseif j == 2
+%         %Arc 2 is CCW, between 180 and 0.
+%         
+%     else
+%         error('Third arc detected.')
+%     end
+% end
+
+%For the GR, we need to identify not only where the gantry angle is
+%decreasing (more generally, opposite in rotation), but identify the
+%initial point where this occurs.
+eti1_gr = find(diff(gantrot_e_iec121)<0); %contains multiple instances
+eti2_gr = find(diff(eti1_gr)>5)+1; %find index jumps (2nd index level) exceeding arbitrary amount
+eti3_gr = eti1_gr(eti2_gr); %backreference to get indices we want to use
+eti_gr = [eti1_gr(1), eti3_gr]; %indices to reference, also including 1st instance
+
+%This will break in an un-assessed way if the TLF contains >1 arcs.
+for i = 1:length(eti_gr)
+    ta1 = find(gantrot_e_iec121 > gantrot_e_iec121(eti_gr(i)));
+    
+    %All points BETWEEN eti_gr(i) and ta(1)+1 need to be linearly
+    %interpolated. Defining the x-range and cooresponding y-values. 
+    xi_range = [eti_gr(i),ta1(1)+1];
+    yi_range = gantrot_e_iec121(xi_range);
+    
+    %Interpolation, last parameter is values to interpolate over.
+    yi = interp1(xi_range, yi_range, eti_gr(i)+1 : ta1(1));
+    
+    gantrot_e_iec121(eti_gr(i)+1 : ta1(1)) = yi;
+    %gantrot_e_iec121(eti_gr(i)+1 : ta1(1)-1) = gantrot_e_iec121(eti_gr(i));
+end
+
+
+testadj = length(find(diff(mu_e)<0)) + length(find(diff(gantrot_e_iec121)<0));% + ...
+    %length(find(diff(cp_e)<0));
+if testadj > 0
+    error('Unsuccessful MU, CP, or GR adjusments.')
+end
+    
+clear eti_mu eti_cp eti_gr eti1_gr eti2_gr eti3_gr ta1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %USER PROMPT FOR PREPROGRAMMED WAVEFORM OR MW-VXP SELECTION.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc;
@@ -382,6 +453,7 @@ for i = 1:size(sorted_phase_arc, 1)
         end %MU shift interphase loop        
     end %arcs
 end %phases
+% ---END: MU SHIFT---
 
 % ---RESTRUCTURING FOR DICOM WRITING---
 %The TLF data of interest is contained within the following structure.
@@ -448,6 +520,53 @@ for i = 1:NUMPHASES
         end
     end
 end
+% ---END: RESTRUCTURING FOR DICOM WRITING---
+
+% ---SUB-SAMPLING---
+% "Steven added: This section removes point that are linear interpolation
+% It keeps point that surround points where there is a change of
+% integer".
+
+for i=1:NUMPHASES
+    CPICP_ARC1=zeros(1,length(PhaseARC1{i}.Control_Point));
+    CP_ARC1_1=PhaseARC1{i}.Control_Point;
+    CP_ARC1=diff(floor(CP_ARC1_1));
+    CP_ARC1_CI1=find(CP_ARC1>0);
+    CP_ARC1_CI2=CP_ARC1_CI1+1;
+    CPICP_ARC1(1:100)=1;
+    CPICP_ARC1(end)=1;
+    CPICP_ARC1(CP_ARC1_CI1)=1;
+    CPICP_ARC1(CP_ARC1_CI2)=1;
+    CPICPI_ARC1=find(CPICP_ARC1==1);
+
+    %PhaseARC1_2{i}.ARC_num=PhaseARC1{i}.ARC_num(CPICPI_ARC1);
+    PhaseARC1_2{i}.Control_Point=PhaseARC1{i}.Control_Point(CPICPI_ARC1);
+    PhaseARC1_2{i}.Gantry_IEC=PhaseARC1{i}.Gantry_IEC(CPICPI_ARC1);
+    PhaseARC1_2{i}.MLC=PhaseARC1{i}.MLC(CPICPI_ARC1);
+    PhaseARC1_2{i}.MU_final=PhaseARC1{i}.MU_final(CPICPI_ARC1);
+    PhaseARC1_2{i}.CPICPI=CPICPI_ARC1;
+
+    if size(sorted_phase_arc, 2) > 1
+        CPICP_ARC2=zeros(1,length(PhaseARC2{i}.Control_Point));
+        CP_ARC2_1=PhaseARC2{i}.Control_Point;
+        CP_ARC2=diff(floor(CP_ARC2_1));
+        CP_ARC2_CI1=find(CP_ARC2>0);
+        CP_ARC2_CI2=CP_ARC2_CI1+1;
+        CPICP_ARC2(1:100)=1;
+        CPICP_ARC2(end)=1;
+        CPICP_ARC2(CP_ARC2_CI1)=1;
+        CPICP_ARC2(CP_ARC2_CI2)=1;
+        CPICPI_ARC2=find(CPICP_ARC2==1);
+
+        %PhaseARC2_2{i}.ARC_num=PhaseARC2{i}.ARC_num(CPICPI_ARC2);
+        PhaseARC2_2{i}.Control_Point=PhaseARC2{i}.Control_Point(CPICPI_ARC2);
+        PhaseARC2_2{i}.Gantry_IEC=PhaseARC2{i}.Gantry_IEC(CPICPI_ARC2);
+        PhaseARC2_2{i}.MLC=PhaseARC2{i}.MLC(CPICPI_ARC2);
+        PhaseARC2_2{i}.MU_final=PhaseARC2{i}.MU_final(CPICPI_ARC2);
+        PhaseARC2_2{i}.CPICPI=CPICPI_ARC2;
+    end
+end
+% ---END: SUB-SAMPLING---
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %WRITING OUT DICOM RT PLANS (10 or 20)
@@ -486,8 +605,8 @@ for j = 1:NUMPHASES
     RP = dicominfo(DICOM_RTplan_names{j});
     
     %Simple variable rename here.
-    %Phase = PhaseARC1_2; %in TTs code, this was a subsampled structure
-    Phase = PhaseARC1;
+    Phase = PhaseARC1_2; %in TTs code, this was a subsampled structure
+    %Phase = PhaseARC1; %no subsampling
     
     %Below, we begin to modify selected parts of the DICOM RP file. These
     %files were previously exported from the planning system. Some things
@@ -565,29 +684,31 @@ for j = 1:NUMPHASES
         
     end %CP loop arc 1
     
-    %Exactly the same as above, just for the second arc.
-    Phase = PhaseARC2;
-    
-    RP.FractionGroupSequence(1).Item_1.ReferencedBeamSequence.Item_2.BeamMeterset=max(Phase{j}.MU_final);
-    num_control_points=length(Phase{j}.MU_final);
-    RP.BeamSequence.Item_2.NumberOfControlPoints=num_control_points;
-    for i=1:num_control_points
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ControlPointIndex=i-1;
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).GantryAngle=Phase{j}.Gantry_IEC(i);
-        if i == 1
-            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_3.LeafJawPositions=(horzcat(Phase{j}.MLC{i}.MLC_B,Phase{j}.MLC{i}.MLC_A))';
-        else
-            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.RTBeamLimitingDeviceType='MLCX';
-            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.LeafJawPositions=(horzcat(Phase{j}.MLC{i}.MLC_B,Phase{j}.MLC{i}.MLC_A))';
-        end
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).GantryRotationDirection='CC';
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).CumulativeMetersetWeight=Phase{j}.MU_final(i)/max(Phase{j}.MU_final);
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.CumulativeDoseReferenceCoefficient=...
-            Phase{j}.MU_final(i)/max(Phase{j}.MU_final);
-        RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.ReferencedDoseReferenceNumber=1;
+    %Exactly the same as above, just for the second arc (if one exists).
+    if size(sorted_phase_arc, 2) > 1
+        Phase = PhaseARC2_2; %in TTs code, this was a subsampled structure
+        %Phase = PhaseARC2; %no subsampling
         
-    end %CP loop arc 2
-    
+        RP.FractionGroupSequence(1).Item_1.ReferencedBeamSequence.Item_2.BeamMeterset=max(Phase{j}.MU_final);
+        num_control_points=length(Phase{j}.MU_final);
+        RP.BeamSequence.Item_2.NumberOfControlPoints=num_control_points;
+        for i=1:num_control_points
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ControlPointIndex=i-1;
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).GantryAngle=Phase{j}.Gantry_IEC(i);
+            if i == 1
+                RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_3.LeafJawPositions=(horzcat(Phase{j}.MLC{i}.MLC_B,Phase{j}.MLC{i}.MLC_A))';
+            else
+                RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.RTBeamLimitingDeviceType='MLCX';
+                RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).BeamLimitingDevicePositionSequence.Item_1.LeafJawPositions=(horzcat(Phase{j}.MLC{i}.MLC_B,Phase{j}.MLC{i}.MLC_A))';
+            end
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).GantryRotationDirection='CC';
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).CumulativeMetersetWeight=Phase{j}.MU_final(i)/max(Phase{j}.MU_final);
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.CumulativeDoseReferenceCoefficient=...
+                Phase{j}.MU_final(i)/max(Phase{j}.MU_final);
+            RP.BeamSequence.Item_2.ControlPointSequence.(['Item_' num2str(i)]).ReferencedDoseReferenceSequence.Item_1.ReferencedDoseReferenceNumber=1;
+
+        end %CP loop arc 2
+    end
     
     dicom_output=['TT_' DICOM_RTplan_names{j}];
     dicomwrite(1,dicom_output,RP,'CreateMode', 'copy');
@@ -608,8 +729,26 @@ disp('PROCESSING COMPLETE!')
 
 
 
-
-
+% aaa = find(diff(mu_e)<0); %MU event (indicies).
+% bbb = find(diff(gantrot_e_iec121)<0);
+% ccc = find(diff(cp_e)<0);
+% et_mu = tlf_times(aaa); %error times for MU events (times).
+% et_gt = tlf_times(bbb); %error times for gant events
+% et_cp = tlf_times(ccc); %error times for cp events
+% 
+% plot(tlf_times, mu_e/max(mu_e));
+% hold on
+% plot(et_mu, mu_e(aaa)/max(mu_e),'ro')
+% 
+% plot(tlf_times, gantrot_e_iec121/max(gantrot_e_iec121),'-g');
+% hold on
+% plot(et_gt, gantrot_e_iec121(bbb)/max(gantrot_e_iec121),'ko')
+% 
+% plot(tlf_times, cp_e/max(cp_e),'-k');
+% hold on
+% plot(et_cp, cp_e(ccc)/max(cp_e),'co')
+% 
+% plot(rpm_times/1000, beamenable,'-m')
 
 
 

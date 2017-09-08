@@ -54,7 +54,11 @@ if isempty(user_query_waveform)
     %logical indexing is used to reference the entire phase_array and set the
     %referenced values to the appropriate values.
     
-    %OPTION 1 - Does not work well with preprogrammed waveform.
+    %OPTION 1 - Does not work well with preprogrammed waveform. A
+    %consistent error is introduced when the preprogrammed continuous
+    %phase-wrapped values have exactly the same value as those tested
+    %against in the test condition. The error is not randomly distributed
+    %and accumulates in specific phases.
     for i = 1:num_phases
         phase_array( (phase_tlf >= aa(i)) & (phase_tlf < aa(i+1)) ) = i-1;
     end
@@ -109,17 +113,18 @@ while i < length_tlf
     for j = 1:num_phases
         %Loop through numerical representation of phase (ex: 0 to 9).
         if phase_tlf2(i) == (j-1)
-            %If match to current recorded phase.
+            %If current phase matches a tested phase...
             
+            %Old test: ( phase_tlf2(i+1)==(j-2) || phase_tlf2(i+1)==j ) || ...
+            %( phase_tlf2(i)==(num_phases-1) && phase_tlf2(i+1)==0 )
             
-            
-            if ( phase_tlf2(i+1)==(j-2) || phase_tlf2(i+1)==j ) || ...
-                    ( phase_tlf2(i)==(num_phases-1) && phase_tlf2(i+1)==0 )
-                %Special case here. Add current recording to current phase
-                %AND add next recording to current and next phase. New rec
-                %could be either a 'higher' or 'lower' phase hence we have
-                %j-2 for one less than j-1 and j as one more. Or, there
-                %could be a change from the last phase n -> phase 0.
+            if phase_tlf2(i+1) ~= (j-1)
+                %If the next recording does not have the same phase as the
+                %current recording, we have a special case here. Add
+                %current recording to current phase AND add next recording
+                %to current and next phase. New rec could be either a
+                %'higher' or 'lower' phase. Or, there could be a change
+                %from the last phase n -> phase 0.
                 
                 %Add the current recording and increment counter.
                 sorted_phase{j}(x(j)) = i;
@@ -139,10 +144,14 @@ while i < length_tlf
                 sorted_phase{q}(x(q)) = i+1;
                 x(q) = x(q) + 1;
                 
+                entries_added = entries_added + 1;
+                
+                %Add the recording index to special array for MU shift.
+                
                 %Mark to skip next recording. This increment in combination
                 %with the increment at the end causes a skip.
                 i = i+1;
-                entries_added = entries_added + 1;
+                
                 break
             else
                 %Add the index to the matching phase.
@@ -150,8 +159,6 @@ while i < length_tlf
                 x(j) = x(j) + 1;
                 break
             end %special test (entering new phase)
-            
-            
             
         end %phase test
     end %phase loop
