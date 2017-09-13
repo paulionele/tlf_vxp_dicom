@@ -262,45 +262,91 @@ end
 %     cp_e(eti_cp(i)+1 : ta1(1)-1) = cp_e(eti_cp(i));
 % end
 
-% %For the following, we assume that any first arc 
-% intra_arc = arc_identifier(cp_e, subbeam); %range of indicies between arcs
-% 
-% for j = 1:length(intra_arc)+1
-%     if j == 1
-%         %Arc 1 CW, between 0 and 180.
-%         
-%     elseif j == 2
-%         %Arc 2 is CCW, between 180 and 0.
-%         
-%     else
-%         error('Third arc detected.')
-%     end
-% end
+%---GR ADJUSTMENTS--- very ugly, need to redo this section
+if (length(subbeam) == 1) && (length(find(diff(gantrot_e_iec121)<0)) > 0)
+    %This was a 1 arc delivery. Assume arc is CW between 0 and 180 deg.
 
-%For the GR, we need to identify not only where the gantry angle is
-%decreasing (more generally, opposite in rotation), but identify the
-%initial point where this occurs.
-eti1_gr = find(diff(gantrot_e_iec121)<0); %contains multiple instances
-eti2_gr = find(diff(eti1_gr)>5)+1; %find index jumps (2nd index level) exceeding arbitrary amount
-eti3_gr = eti1_gr(eti2_gr); %backreference to get indices we want to use
-eti_gr = [eti1_gr(1), eti3_gr]; %indices to reference, also including 1st instance
+    %For the GR, we need to identify not only where the gantry angle is
+    %decreasing (more generally, opposite in rotation), but identify the
+    %initial point where this occurs.
+    eti1_gr = find(diff(gantrot_e_iec121)<0); %contains multiple instances        
+    eti2_gr = find(diff(eti1_gr)>5)+1; %find index jumps (2nd index level) exceeding arbitrary amount
+    eti3_gr = eti1_gr(eti2_gr); %backreference to get indices we want to use
+    eti_gr = [eti1_gr(1), eti3_gr]; %indices to reference, also including 1st instance
 
-%This will break in an un-assessed way if the TLF contains >1 arcs.
-for i = 1:length(eti_gr)
-    ta1 = find(gantrot_e_iec121 > gantrot_e_iec121(eti_gr(i)));
-    
-    %All points BETWEEN eti_gr(i) and ta(1)+1 need to be linearly
-    %interpolated. Defining the x-range and cooresponding y-values. 
-    xi_range = [eti_gr(i),ta1(1)+1];
-    yi_range = gantrot_e_iec121(xi_range);
-    
-    %Interpolation, last parameter is values to interpolate over.
-    yi = interp1(xi_range, yi_range, eti_gr(i)+1 : ta1(1));
-    
-    gantrot_e_iec121(eti_gr(i)+1 : ta1(1)) = yi;
-    %gantrot_e_iec121(eti_gr(i)+1 : ta1(1)-1) = gantrot_e_iec121(eti_gr(i));
-end
+    for i = 1:length(eti_gr)
+        ta1 = find(gantrot_e_iec121 > gantrot_e_iec121(eti_gr(i)));
 
+        %All points BETWEEN eti_gr(i) and ta(1)+1 need to be linearly
+        %interpolated. Defining the x-range and cooresponding y-values. 
+        xi_range = [eti_gr(i),ta1(1)+1];
+        yi_range = gantrot_e_iec121(xi_range);
+
+        %Interpolation, last parameter is values to interpolate over.
+        yi = interp1(xi_range, yi_range, eti_gr(i)+1 : ta1(1));
+
+        gantrot_e_iec121(eti_gr(i)+1 : ta1(1)) = yi;
+        %gantrot_e_iec121(eti_gr(i)+1 : ta1(1)-1) = gantrot_e_iec121(eti_gr(i));
+    end
+end   
+% elseif (length(subbeam) == 2)
+%     %This was a 2 arc delivery. Assume 1st arc CW, 2nd arc CCW between 180
+%     %and 0 deg.
+%     intra_arc = arc_identifier(cp_e, subbeam); %range of indices b/w arcs.
+%     
+%     for j = 1:2
+%         if (j == 1) && (length( find(diff( gantrot_e_iec121(1:intra_arc{1}-1) < 0 )) ) > 0)
+%             %ARC 1. Similar to single arc case except scanning only part of
+%             %array, determined by the indices from intra_arc.
+%             eti1_gr = find(diff( gantrot_e_iec121(1:intra_arc{1}-1) < 0 ));
+%             eti2_gr = find(diff(eti1_gr) > 5) + 1; %find index jumps (2nd index level) exceeding arbitrary amount
+%             eti3_gr = eti1_gr(eti2_gr); %backreference to get indices we want to use
+%             eti_gr = [eti1_gr(1), eti3_gr]; %indices to reference, also including 1st instance
+%             
+%             for i = 1:length(eti_gr)
+%                 ta1 = find(gantrot_e_iec121(1:intra_arc{1}-1) > gantrot_e_iec121(eti_gr(i)));
+%                 
+%                 %All points BETWEEN eti_gr(i) and ta(1)+1 need to be linearly
+%                 %interpolated. Defining the x-range and cooresponding y-values.
+%                 xi_range = [eti_gr(i),ta1(1)+1];
+%                 yi_range = gantrot_e_iec121(xi_range);
+%                 
+%                 %Interpolation, last parameter is values to interpolate over.
+%                 yi = interp1(xi_range, yi_range, eti_gr(i)+1 : ta1(1));
+%                 
+%                 gantrot_e_iec121(eti_gr(i)+1 : ta1(1)) = yi;
+%                 %gantrot_e_iec121(eti_gr(i)+1 : ta1(1)-1) = gantrot_e_iec121(eti_gr(i));
+%             end
+%         elseif (j == 2) && (length( find(gantrot_e_iec121(intra_arc{1}(2)+1:end) > 0) ) > 0)
+%             %ARC 2.
+%             eti1_gr = find(gantrot_e_iec121(intra_arc{1}(2)+1:end) > 0);
+%             eti2_gr = find(diff(eti1_gr)>5)+1; %find index jumps (2nd index level) exceeding arbitrary amount
+%             eti3_gr = eti1_gr(eti2_gr); %backreference to get indices we want to use
+%             eti_gr = [eti1_gr(1), eti3_gr]; %indices to reference, also including 1st instance
+%             
+%             for i = 1:length(eti_gr)
+%                 ta1 = find(gantrot_e_iec121(intra_arc{1}(2)+1:end) < gantrot_e_iec121(eti_gr(i)));
+%                 
+%                 %All points BETWEEN eti_gr(i) and ta(1)+1 need to be linearly
+%                 %interpolated. Defining the x-range and cooresponding y-values.
+%                 xi_range = [eti_gr(i),ta1(1)+1];
+%                 yi_range = gantrot_e_iec121(xi_range);
+%                 
+%                 %Interpolation, last parameter is values to interpolate over.
+%                 yi = interp1(xi_range, yi_range, eti_gr(i)+1 : ta1(1));
+%                 
+%                 gantrot_e_iec121(eti_gr(i)+1 : ta1(1)) = yi;
+%                 %gantrot_e_iec121(eti_gr(i)+1 : ta1(1)-1) = gantrot_e_iec121(eti_gr(i));
+%             end
+%         else
+%             %Nothing here.
+%         end %arc number test
+%     end %loop thru arcs
+% else
+%     error('3 or more arcs detected in TLF.')
+% end  
+
+%---END GR ADJUSTMENTS---
 
 testadj = length(find(diff(mu_e)<0)) + length(find(diff(gantrot_e_iec121)<0));% + ...
     %length(find(diff(cp_e)<0));
@@ -324,7 +370,7 @@ if isempty(user_query_waveform)
     
     if strfind(file1, 'MW') > 0
         %File selected is MW file. Check isn't robust for all MW variations.
-        [amplitude,phase,rpm_times,beamenable] = mw_reader(FULLPATH);
+        [amplitude,phase,rpm_times,beamenable] = mw_reader(FULLPATH, NUMPHASES);
         
         %Removing recordings from MW; based on initial beam hold. While the
         %beam is initially held, those recordings (all cooresponding
